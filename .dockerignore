@@ -1,9 +1,10 @@
+# Файл .dockerignore
+
 __pycache__
 *.pyc
 *.pyo
 *.pyd
 .Python
-env
 pip-log.txt
 pip-delete-this-directory.txt
 .tox
@@ -14,7 +15,12 @@ nosetests.xml
 coverage.xml
 *.cover
 *.log
-.git
 .mypy_cache
 .pytest_cache
 .hypothesis
+venv
+.git
+db.sqlite3
+.idea
+.vscodo
+.env
