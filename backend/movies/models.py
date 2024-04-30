@@ -45,29 +45,6 @@ class Movie(models.Model):
         verbose_name="Название фильма"
     )
 
-    # name_original = models.CharField(
-    #     max_length=50,
-    #     verbose_name="Оригинальное название фильма"
-    # )
-    # image = models.ImageField(
-    #     "Ссылка на изображение",
-    #     upload_to="movies/images/",
-    #     null=True,
-    #     default=None,
-    # )
-    # description = models.TextField(
-    #     "Описание",
-    # )
-    # year = models.PositiveSmallIntegerField(
-    #     verbose_name="Год выпуска",
-    #     validators=[
-    #         MinValueValidator(1900),
-    #         MaxValueValidator(date.today().year)
-    #     ]
-    # )
-    # countries
-    # duration
-
     class Meta:
         default_related_name = 'movies'
         ordering = ("name",)
