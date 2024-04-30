@@ -12,8 +12,8 @@ User = get_user_model()
 class Genre(models.Model):
     """Модель жанра."""
 
-    title = models.CharField(
-        "Заголовок",
+    name = models.CharField(
+        "Название жанра",
         max_length=constants.MAX_NAME_LENGTH,
     )
 
