@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     'debug_toolbar',
     'api.apps.ApiConfig',
     'custom_sessions.apps.CustomSessionsConfig',
+    'movies.apps.MoviesConfig',
 ]
 
 MIDDLEWARE = [

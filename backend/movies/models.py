@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from django.db import models
 from django.db.models import UniqueConstraint
 
-from backend.backend import constants
+from service.constants import MAX_NAME_LENGTH
 
 
 User = get_user_model()
@@ -14,13 +14,13 @@ class Genre(models.Model):
 
     name = models.CharField(
         "Название жанра",
-        max_length=constants.MAX_NAME_LENGTH,
+        max_length=MAX_NAME_LENGTH,
     )
 
     class Meta:
         verbose_name = "Жанр"
         verbose_name_plural = "Жанры"
-        ordering = ("title",)
+        ordering = ("name",)
 
     def __str__(self):
         return self.title
@@ -38,12 +38,10 @@ class Movie(models.Model):
     genre = models.ManyToManyField(
         Genre,
         verbose_name='Жанр',
-        verbose_name_plural="Жанры",
-        on_delete=models.SET_NULL,
         blank=True
     )
     name = models.CharField(
-        max_length=constants.MAX_NAME_LENGTH,
+        max_length=MAX_NAME_LENGTH,
         verbose_name="Название фильма"
     )
 
@@ -72,7 +70,7 @@ class Movie(models.Model):
 
     class Meta:
         default_related_name = 'movies'
-        ordering = ("movie",)
+        ordering = ("name",)
         verbose_name = "Фильм"
         verbose_name_plural = "Фильмы"
 
