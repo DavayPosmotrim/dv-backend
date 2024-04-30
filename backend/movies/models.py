@@ -1,10 +1,9 @@
 import uuid
+
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.db.models import UniqueConstraint
-
 from service.constants import MAX_NAME_LENGTH
-
 
 User = get_user_model()
 

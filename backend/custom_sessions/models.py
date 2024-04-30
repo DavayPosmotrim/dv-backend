@@ -1,6 +1,5 @@
 from django.contrib.auth import get_user_model
 from django.db import models
-
 from movies.models import Movie
 # from service.constants import MAX_NAME_LENGTH
 from service.counts import generate_id

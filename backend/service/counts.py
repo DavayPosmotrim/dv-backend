@@ -1,8 +1,8 @@
 """Функции для расчетов . """
 
 
-import string
 import random
+import string
 
 
 def generate_id():
