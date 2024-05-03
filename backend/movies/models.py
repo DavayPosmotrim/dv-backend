@@ -1,12 +1,17 @@
-import uuid
-from django.contrib.auth import get_user_model
 from django.db import models
-from django.db.models import UniqueConstraint
 
-from service.constants import MAX_NAME_LENGTH
+from service.constants import MAX_MOVIE_NAME_LENGTH
 
 
-User = get_user_model()
+class User(models.Model):
+    """Заглушка. """
+
+    name = models.CharField(
+        verbose_name="Имя"
+    )
+    device_id = models.CharField(
+        verbose_name="ID устройства"
+    )
 
 
 class Genre(models.Model):
@@ -14,7 +19,7 @@ class Genre(models.Model):
 
     name = models.CharField(
         "Название жанра",
-        max_length=MAX_NAME_LENGTH,
+        max_length=MAX_MOVIE_NAME_LENGTH,
     )
 
     class Meta:
@@ -29,10 +34,8 @@ class Genre(models.Model):
 class Movie(models.Model):
     """Модель фильма."""
 
-    id = models.UUIDField(
+    id = models.IntegerField(
         primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
         verbose_name="Уникальный код фильма"
     )
     genre = models.ManyToManyField(
@@ -41,7 +44,7 @@ class Movie(models.Model):
         blank=True
     )
     name = models.CharField(
-        max_length=MAX_NAME_LENGTH,
+        max_length=MAX_MOVIE_NAME_LENGTH,
         verbose_name="Название фильма"
     )
 
@@ -55,7 +58,7 @@ class Movie(models.Model):
         return self.name
 
 
-class GenreTitle(models.Model):
+class GenreMovie(models.Model):
     """Вспомогательная модель, связывает произведения и жанры."""
 
     genre = models.ForeignKey(
@@ -69,26 +72,5 @@ class GenreTitle(models.Model):
         on_delete=models.CASCADE
     )
 
-
-class Favorite(models.Model):
-    """Модель избранных фильмов."""
-
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-    )
-    movie = models.ForeignKey(
-        Movie,
-        on_delete=models.CASCADE,
-    )
-
     class Meta:
-        default_related_name = "favorites"
-        ordering = ("movie",)
-        verbose_name = "Избранное"
-        constraints = [
-            UniqueConstraint(
-                fields=["user", "movie"],
-                name="unique_favorite"
-            )
-        ]
+        default_related_name = 'genresmovies'
