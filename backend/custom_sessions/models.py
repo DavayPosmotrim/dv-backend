@@ -3,7 +3,6 @@ import os
 import time
 
 from django.db import models
-
 from movies.models import Movie
 from service.constants import STATUS_CHOICES
 from service.utils import format_date
