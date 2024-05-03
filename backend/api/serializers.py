@@ -1,7 +1,6 @@
 from rest_framework import serializers
+from services.validators import validate_name
 from users.models import User
-
-from .validators import validate_name
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
