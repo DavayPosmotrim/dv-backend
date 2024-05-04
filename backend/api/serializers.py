@@ -1,7 +1,6 @@
-from rest_framework import serializers
-
-from movies.models import Genre
 from custom_sessions.models import CustomSession
+from movies.models import Genre
+from rest_framework import serializers
 
 
 class GenreSerializer(serializers.ModelSerializer):

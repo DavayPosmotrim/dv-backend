@@ -1,6 +1,6 @@
 from django.urls import path
-from .views import GenreListView, CustomSessionCreateView, UserSessionListView
 
+from .views import CustomSessionCreateView, GenreListView, UserSessionListView
 
 urlpatterns = [
     path('genres/', GenreListView.as_view(), name='genre-list'),

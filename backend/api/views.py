@@ -1,8 +1,8 @@
+from custom_sessions.models import CustomSession
+from movies.models import Genre
 from rest_framework import generics
 
-from movies.models import Genre
-from custom_sessions.models import CustomSession
-from .serializers import GenreSerializer, CustomSessionSerializer
+from .serializers import CustomSessionSerializer, GenreSerializer
 
 
 class GenreListView(generics.ListAPIView):
