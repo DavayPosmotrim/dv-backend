@@ -28,7 +28,7 @@ class Genre(models.Model):
         ordering = ("name",)
 
     def __str__(self):
-        return self.title
+        return self.name
 
 
 class Movie(models.Model):
