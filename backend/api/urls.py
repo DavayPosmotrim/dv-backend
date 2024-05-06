@@ -1,6 +1,12 @@
 from django.urls import path
 
-from .views import CustomSessionCreateView, GenreListView, UserSessionListView
+from .views import (
+    CustomSessionCreateView,
+    GenreListView,
+    UserSessionListView,
+    MovieListView,
+    MatchListView
+)
 
 urlpatterns = [
     path('genres/', GenreListView.as_view(), name='genre-list'),
@@ -14,4 +20,6 @@ urlpatterns = [
         UserSessionListView.as_view(),
         name='user_sessions'
     ),
+    path('movies/', MovieListView.as_view(), name='movie_list'),
+    path('matches/', MatchListView.as_view(), name='match_list'),
 ]
