@@ -1,3 +1,5 @@
+from custom_sessions.models import CustomSession
+from movies.models import Genre
 from rest_framework import generics
 
 from movies.models import Genre, Movie
