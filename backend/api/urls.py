@@ -1,9 +1,13 @@
 from django.urls import path
 
-from .views import (CustomSessionCreateView, GenreListView, MatchListView,
+from .views import (CreateUpdateUserView, CustomSessionCreateView,
+                    GenreListView, MatchListView,
                     MovieListView, UserSessionListView)
 
 urlpatterns = [
+    path('v1/users/',
+         CreateUpdateUserView.as_view(),
+         name='create_update_user'),
     path('genres/', GenreListView.as_view(), name='genre-list'),
     path(
         'sessions/create/',
