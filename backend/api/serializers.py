@@ -1,10 +1,10 @@
 from collections import Counter
 from itertools import chain
-from rest_framework import serializers
 
-from services.validators import validate_name
 from custom_sessions.models import CustomSession
 from movies.models import Genre, Movie
+from rest_framework import serializers
+from services.validators import validate_name
 from users.models import User
 
 

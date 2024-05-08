@@ -1,13 +1,8 @@
 from django.urls import path
 
-from .views import (
-    CreateUpdateUserView,
-    CustomSessionCreateView,
-    GenreListView,
-    UserSessionListView,
-    MovieListView,
-    MatchListView
-)
+from .views import (CreateUpdateUserView, CustomSessionCreateView,
+                    GenreListView, MatchListView, MovieListView,
+                    UserSessionListView)
 
 urlpatterns = [
     path('v1/users/',

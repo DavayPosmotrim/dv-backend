@@ -1,16 +1,14 @@
 
-from django.shortcuts import get_object_or_404
-from rest_framework import status
-from rest_framework.response import Response
-from rest_framework import generics
-from rest_framework.views import APIView
-
 from custom_sessions.models import CustomSession
+from django.shortcuts import get_object_or_404
 from movies.models import Genre, Movie
-from .serializers import (CustomSessionSerializer, CustomUserSerializer,
-                          GenreSerializer,
-                          MovieSerializer)
+from rest_framework import generics, status
+from rest_framework.response import Response
+from rest_framework.views import APIView
 from users.models import User
+
+from .serializers import (CustomSessionSerializer, CustomUserSerializer,
+                          GenreSerializer, MovieSerializer)
 
 
 class CreateUpdateUserView(APIView):
