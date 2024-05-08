@@ -3,20 +3,11 @@ import os
 import time
 
 from django.db import models
+
 from movies.models import Movie
-from service.constants import STATUS_CHOICES
-from service.utils import format_date
-
-
-class User(models.Model):
-    """Заглушка. """
-
-    name = models.CharField(
-        verbose_name="Имя"
-    )
-    device_id = models.CharField(
-        verbose_name="ID устройства"
-    )
+from services.constants import STATUS_CHOICES
+from services.utils import format_date
+from users.models import User
 
 
 # вариант быстрого генератора id с проверкой уникальности

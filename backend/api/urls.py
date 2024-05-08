@@ -1,6 +1,7 @@
 from django.urls import path
 
 from .views import (
+    CreateUpdateUserView,
     CustomSessionCreateView,
     GenreListView,
     UserSessionListView,
@@ -9,6 +10,9 @@ from .views import (
 )
 
 urlpatterns = [
+    path('v1/users/',
+         CreateUpdateUserView.as_view(),
+         name='create_update_user'),
     path('genres/', GenreListView.as_view(), name='genre-list'),
     path(
         'sessions/create/',

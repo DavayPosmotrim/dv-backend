@@ -1,16 +1,5 @@
 from django.db import models
-from service.constants import MAX_MOVIE_NAME_LENGTH
-
-
-class User(models.Model):
-    """Заглушка. """
-
-    name = models.CharField(
-        verbose_name="Имя"
-    )
-    device_id = models.CharField(
-        verbose_name="ID устройства"
-    )
+from services.constants import MAX_MOVIE_NAME_LENGTH
 
 
 class Genre(models.Model):
@@ -45,6 +34,12 @@ class Movie(models.Model):
     name = models.CharField(
         max_length=MAX_MOVIE_NAME_LENGTH,
         verbose_name="Название фильма"
+    )
+    image = models.ImageField(
+        "Ссылка на изображение",
+        upload_to="movies/images/",
+        null=True,
+        default=None,
     )
 
     class Meta:
