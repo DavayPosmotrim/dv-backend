@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 """Константы, используемые в моделях и api. """
 
 MAX_USER_NAME_LENGTH: int = 16
@@ -9,3 +10,7 @@ STATUS_CHOICES = [
     ('voting', 'Голосование'),
     ('closed', 'Закрыто'),
 ]
+=======
+MAX_USER_NAME_LENGTH: int = 16
+MAX_DEVICE_ID_LENGTH: int = 24
+>>>>>>> 5f401ffcd6664e8ee66ee07c60214acd17acf9f6
