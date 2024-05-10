@@ -76,7 +76,7 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-"""
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -96,7 +96,7 @@ DATABASES = {
         'PORT': os.getenv('DB_PORT', '5432')
     }
 }
-
+"""
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 """
@@ -138,9 +138,9 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
+"""
 AUTH_USER_MODEL = 'users.User'
-
+"""
 SWAGGER_SETTINGS = {
     'SECURITY_DEFINITIONS': {
         'basic': {
