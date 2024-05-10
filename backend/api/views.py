@@ -31,7 +31,6 @@ class CreateUpdateUserView(APIView):
         return Response(serializer.errors,
                         status=status.HTTP_400_BAD_REQUEST)
 
-
     def put(self, request):
         device_id = request.data.get('device_id', False)
         if device_id:
