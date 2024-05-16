@@ -1,8 +1,11 @@
 
+from random import choice
+
 from custom_sessions.models import CustomSession
 from django.shortcuts import get_object_or_404
 from movies.models import Genre, Movie
-from rest_framework import generics, status
+from rest_framework import generics, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from users.models import User
@@ -59,7 +62,7 @@ class CreateUpdateUserView(APIView):
                         status=status.HTTP_400_BAD_REQUEST)
 
 
-class GenreListView(generics.ListAPIView):
+class GenreListView(mixins.ListModelMixin, viewsets.GenericViewSet):
     """Представление списка жанров."""
 
     queryset = Genre.objects.all()
@@ -90,8 +93,11 @@ class MovieListView(generics.ListAPIView):
     serializer_class = MovieSerializer
 
 
-class MatchListView(generics.ListAPIView):
-    """Представление списка избранных фильмов (совпадений)."""
+class MatchViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Представление списка избранных фильмов (совпадений).
+    Функционал рулетки - рандомный выбор фильма из списка совподений.
+    """
 
     serializer_class = MovieSerializer
 
@@ -101,3 +107,21 @@ class MatchListView(generics.ListAPIView):
             session = CustomSession.objects.get(id=session_id)
             return session.movies.filter(matched=True)
         return Movie.objects.none()
+
+    @action(detail=False,
+            method=['get'],
+            url_path='roulette')
+    def get_roulette(self):
+        """Возвращает рандомный фильм
+        если в списке совподений более 2 фильмов или ошибку"""
+        matched_movies = self.get_queryset()
+        if len(matched_movies) > 2:
+            random_movie = choice(matched_movies)
+            serializer = self.serializer_class(random_movie)
+            return Response(serializer.data)
+        return Response(
+            {'error_message': (
+                'В списке совподений '
+                'должно быть более 2 фильмов.')},
+            status=status.HTTP_400_BAD_REQUEST
+        )
