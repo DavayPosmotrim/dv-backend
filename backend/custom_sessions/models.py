@@ -81,3 +81,25 @@ class CustomSession(models.Model):
             return format_date(self.date)
         else:
             return 'Дата не установлена'
+
+
+class UserMovieVote(models.Model):
+    """Модель голосов пользователей за фильм. """
+
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE
+    )
+    movie = models.ForeignKey(
+        Movie, on_delete=models.CASCADE
+    )
+    session = models.ForeignKey(
+        CustomSession, on_delete=models.CASCADE
+    )
+
+    class Meta:
+        ordering = ("movie",)
+        verbose_name = "Голос"
+        verbose_name_plural = "Голоса"
+
+    def __str__(self):
+        return self.movie
