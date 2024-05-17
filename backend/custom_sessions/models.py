@@ -84,7 +84,7 @@ class CustomSession(models.Model):
 
 
 class UserMovieVote(models.Model):
-    """Модель голосов пользователей за фильм. """
+    """Модель голоса пользователя за фильм в рамках сессии. """
 
     user = models.ForeignKey(
         User, on_delete=models.CASCADE

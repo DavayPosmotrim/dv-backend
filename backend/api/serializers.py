@@ -27,11 +27,34 @@ class GenreSerializer(serializers.ModelSerializer):
         ]
 
 
+class MovieSerializer(serializers.ModelSerializer):
+    """Сериализатор фильма/списка фильмов."""
+
+    genre = serializers.SlugRelatedField(
+        many=True,
+        slug_field='name',
+        queryset=Genre.objects.all()
+    )
+
+    class Meta:
+        model = Movie
+        fields = ['id', 'name', 'genre', 'image']
+
+
+class UserMovieVoteSerializer(serializers.ModelSerializer):
+    """Сериализатор голоса пользователя к фильму."""
+
+    class Meta:
+        model = UserMovieVote
+        fields = ['user', 'movie', 'session']
+
+
 class CustomSessionSerializer(serializers.ModelSerializer):
     """Сериализатор сеанса/комнаты."""
 
-    matched_movies = serializers.SerializerMethodField()
-    movie_votes = serializers.SerializerMethodField()
+    users = CustomUserSerializer(many=True, read_only=True)
+    movie_votes = UserMovieVoteSerializer(many=True, source='usermovievote_set', read_only=True)
+    matched_movies = MovieSerializer(many=True, read_only=True)
 
     class Meta:
         model = CustomSession
@@ -45,39 +68,23 @@ class CustomSessionSerializer(serializers.ModelSerializer):
             'matched_movies',
         ]
 
-    def get_movie_votes(self, obj):
-        """Принимает объект сессии,
-        сохраняет голоса пользователей по фильмам. """
-        votes = UserMovieVote.objects.filter(
-            session=obj
-        ).values_list('movie__id', 'user__id')
-        movie_votes = {
-            movie: users for movie, users in votes.distinct()
-        }
-        return movie_votes
-
-    def get_matched_movies(self, obj):
-        """Принимает объект сессии, считает голоса пользователей
-        за фильм и выдает совпадения (сохраняет в мэтчи),
-        если проголосовали все пользователи в комнате."""
-        num_users_in_session = obj.users.count()
-        movie_votes = self.get_movie_votes(obj)
-        matched_movies = [
-            movie for movie, users in movie_votes.items()
-            if len(users) == num_users_in_session
+    def to_representation(self, instance):
+        """Принимает экземпляр модели сессии.
+           Определяет список фильмов, за которые проголосовали
+           все пользователи в данной сессии.
+           Добавляет этот список в поле 'matched_movies'.
+           Возвращает в виде словаря представление экземпляра CustomSession,
+           включая поле 'matched_movies'."""
+        representation = super().to_representation(instance)
+        num_users_in_session = instance.users.count()
+        votes = UserMovieVote.objects.filter(session=instance)
+        movies_voted = [vote.movie.id for vote in votes]
+        matched_movies_queryset = [
+            movie for movie in instance.movies.all()
+            if movies_voted.count(movie.id) == num_users_in_session
         ]
-        return MovieSerializer(matched_movies, many=True).data
-
-
-class MovieSerializer(serializers.ModelSerializer):
-    """Сериализатор фильма/списка фильмов."""
-
-    genre = serializers.SlugRelatedField(
-        many=True,
-        slug_field='name',
-        queryset=Genre.objects.all()
-    )
-
-    class Meta:
-        model = Movie
-        fields = ['id', 'name', 'genre', 'image']
+        matched_movies_field = self.get_fields()['matched_movies']
+        representation[
+            'matched_movies'
+        ] = matched_movies_field.to_representation(matched_movies_queryset)
+        return representation
