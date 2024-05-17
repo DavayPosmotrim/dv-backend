@@ -1,7 +1,6 @@
-from rest_framework import serializers
-
 from custom_sessions.models import CustomSession, UserMovieVote
 from movies.models import Genre, Movie
+from rest_framework import serializers
 from users.models import User
 
 
