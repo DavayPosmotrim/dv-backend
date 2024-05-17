@@ -53,7 +53,9 @@ class CustomSessionSerializer(serializers.ModelSerializer):
     """Сериализатор сеанса/комнаты."""
 
     users = CustomUserSerializer(many=True, read_only=True)
-    movie_votes = UserMovieVoteSerializer(many=True, source='usermovievote_set', read_only=True)
+    movie_votes = UserMovieVoteSerializer(
+        many=True, source='usermovievote_set', read_only=True
+    )
     matched_movies = MovieSerializer(many=True, read_only=True)
 
     class Meta:
