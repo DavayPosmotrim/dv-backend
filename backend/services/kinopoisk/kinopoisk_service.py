@@ -40,68 +40,61 @@ class KinopoiskService:
 class KinopoiskMovies(KinopoiskService):
     """Сервис для получения информации о фильмах с возможностью фильтрации."""
 
-    def _get_filtered_movies(self, params: dict, fields: list | tuple):
-        """
-        Получает список фильмов с требуемыми полями.
-
-        :param fields: Требуемые поля фильма в ответе.
-        """
-
-        params['selectFields'] = fields
-        response = self._perform_get_request(self.movies_url, params)
-        return response
-
-    def get_movies_by_genres(
+    def __init__(
         self,
-        genres: list | tuple,
+        genres: list | tuple = None,
+        collections: list | tuple = None,
+    ):
+        self.genres = genres
+        self.collections = collections
+
+    def get_movies(
+        self,
         page: int = 1,
-        limit: int = 10,
+        limit: int = 250,
+        sort_by_rating: bool = True,
     ):
         """
-        Получает пагинированный список фильмов по заданным жанрам.
+        Получает пагинированный список фильмов по заданным
+        жанрам или коллекциям в виде id и name фильма.
 
-        :param genres: Список названий жанров для фильтрации.
         :param page: Номер страницы.
         :param limit: Максимальное количество элементов на странице.
+        :param sort_by_rating: Сортировка по рейтингу от большего к меньшему.
         """
 
-        return self._get_filtered_movies(
-            params={
-                'genres.name': genres,
+        search_by = 'lists'
+        pattern = self.collections
+        if self.genres:
+            search_by = 'genres.name'
+            pattern = self.genres
+        if pattern:
+            params = {
+                search_by: pattern,
+                'selectFields': ('id', 'name'),
                 'page': page,
                 'limit': limit,
-            },
-            fields=('id', 'name'),
-        )
+                'notNullFields': ('id', 'name'),
+                'type': ('cartoon', 'movie'),
+            }
+            if sort_by_rating:
+                params['sortField'] = 'rating.kp'
+                params['sortType'] = '-1'
 
-    def get_movies_from_collections(
-        self, collections: list | tuple, page: int = 1, limit: int = 10
-    ):
-        """
-        Получает пагинированный список фильмов из данных коллекций.
+            return self._perform_get_request(self.movies_url, params)
 
-        :param collections: Список slug коллекций фильмов.
-        :param page: Номер страницы.
-        :param limit: Максимальное количество элементов на странице.
-        """
-
-        return self._get_filtered_movies(
-            params={
-                'lists': collections,
-                'page': page,
-                'limit': limit,
-            },
-            fields=('id', 'name'),
-        )
+        raise ValueError('You should pass either genres or collections')
 
 
 class KinopoiskCollections(KinopoiskService):
     """Сервис для работы с подборками фильмов на Кинопоиске."""
 
     def get_collections(self):
-        """Получает список подборок."""
+        """Получает список подборок, исключая подборки с сериалами."""
 
-        return self._perform_get_request(self.collections_url, {'limit': 250})
+        return self._perform_get_request(
+            self.collections_url, {'limit': 250, 'category': '!Сериалы'}
+        )
 
 
 class KinopoiskGenres(KinopoiskService):
@@ -119,7 +112,7 @@ class KinopoiskGenres(KinopoiskService):
         return self._perform_get_request(url, {'field': 'genres.name'})
 
 
-class KinopoiskMovieInfo(KinopoiskMovies):
+class KinopoiskMovieInfo(KinopoiskService):
     """Сервис для получения детальной информации о фильмах на Кинопоиске."""
 
     @staticmethod
@@ -160,6 +153,7 @@ class KinopoiskMovieInfo(KinopoiskMovies):
             'genres',
             'persons',
         )
-        response = self._get_filtered_movies({'id': movie_id}, fields)
+        params = {'selectFields': fields, 'id': movie_id}
+        response = self._perform_get_request(self.movies_url, params)
         self._extract_persons(response['docs'])
         return response['docs'][0]
