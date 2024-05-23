@@ -1,21 +1,18 @@
 
+from custom_sessions.models import CustomSession
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import (
     extend_schema, OpenApiParameter, OpenApiResponse
 )
 # from drf_yasg.utils import no_body
 # from drf_yasg import openapi
-from rest_framework import status
+from rest_framework import generics, status
 from rest_framework.response import Response
-from rest_framework import generics
 from rest_framework.views import APIView
-
-from custom_sessions.models import CustomSession
-from movies.models import Genre, Movie
-from .serializers import (CustomSessionSerializer, CustomUserSerializer,
-                          GenreSerializer,
-                          MovieSerializer)
 from users.models import User
+
+from .serializers import (CustomSessionSerializer, CustomUserSerializer,
+                          GenreSerializer, MovieSerializer)
 
 
 class CreateUpdateUserView(APIView):

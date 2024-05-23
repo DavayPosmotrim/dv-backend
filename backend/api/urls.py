@@ -1,14 +1,9 @@
 from django.urls import path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
-from .views import (
-    CreateUpdateUserView,
-    CustomSessionCreateView,
-    GenreListView,
-    UserSessionListView,
-    MovieListView,
-    MatchListView
-)
+from .views import (CreateUpdateUserView, CustomSessionCreateView,
+                    GenreListView, MatchListView, MovieListView,
+                    UserSessionListView)
 
 urlpatterns = [
     path('v1/users/',

@@ -1,5 +1,4 @@
 from django.db import models
-
 from services.constants import MAX_DEVICE_ID_LENGTH, MAX_USER_NAME_LENGTH
 from services.validators import validate_name
 
