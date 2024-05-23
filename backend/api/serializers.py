@@ -66,7 +66,7 @@ class CustomSessionSerializer(serializers.ModelSerializer):
             'movies',
             'date',
             'status',
-            'movie_votes'
+            'movie_votes',
             'matched_movies',
         ]
 

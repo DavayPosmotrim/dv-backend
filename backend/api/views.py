@@ -1,6 +1,8 @@
 
 from django.shortcuts import get_object_or_404
-from drf_yasg.utils import swagger_auto_schema
+from drf_spectacular.utils import (
+    extend_schema, OpenApiParameter, OpenApiResponse
+)
 # from drf_yasg.utils import no_body
 # from drf_yasg import openapi
 from rest_framework import status
@@ -30,11 +32,11 @@ class CreateUpdateUserView(APIView):
         return Response({'error_message': 'Device id не был передан.'},
                         status=status.HTTP_400_BAD_REQUEST)
 
-    @swagger_auto_schema(
-        request_body=CustomUserSerializer,
+    @extend_schema(
+        request=CustomUserSerializer,
         responses={
             201: CustomUserSerializer,
-            400: 'Bad Request'
+            400: OpenApiResponse(description='Bad Request'),
         }
     )
     def post(self, request):
@@ -48,6 +50,21 @@ class CreateUpdateUserView(APIView):
         return Response(serializer.errors,
                         status=status.HTTP_400_BAD_REQUEST)
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name='device_id',
+                type=str,
+                location=OpenApiParameter.QUERY,
+                required=True,
+            )
+        ],
+        request=CustomUserSerializer,
+        responses={
+            200: CustomUserSerializer,
+            400: OpenApiResponse(description='Bad Request'),
+        }
+    )
     def put(self, request):
         device_id = request.data.get('device_id', False)
         if device_id:
