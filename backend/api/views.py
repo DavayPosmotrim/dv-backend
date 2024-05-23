@@ -1,5 +1,3 @@
-
-from custom_sessions.models import CustomSession
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import (
     extend_schema, OpenApiParameter, OpenApiResponse
@@ -9,7 +7,11 @@ from drf_spectacular.utils import (
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from custom_sessions.models import CustomSession
+from movies.models import Genre, Movie
 from users.models import User
+
 
 from .serializers import (CustomSessionSerializer, CustomUserSerializer,
                           GenreSerializer, MovieSerializer)
