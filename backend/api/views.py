@@ -115,7 +115,7 @@ class MatchViewSet(viewsets.ReadOnlyModelViewSet):
         """Возвращает рандомный фильм
         если в списке совподений более 2 фильмов или ошибку"""
         matched_movies = self.get_queryset()
-        if len(matched_movies) > 2:
+        if matched_movies.count() > 2:
             random_movie = choice(matched_movies)
             serializer = self.serializer_class(random_movie)
             return Response(serializer.data)
