@@ -1,15 +1,15 @@
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import (
-    extend_schema, OpenApiParameter, OpenApiResponse
-)
-# from drf_yasg.utils import no_body
-# from drf_yasg import openapi
-from rest_framework import generics, status
+from rest_framework import generics, status, viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from custom_sessions.models import CustomSession
 from movies.models import Genre, Movie
+from services.schemas import (
+    user_schema, match_list_schema, user_session_list_schema,
+    # genre_list_schema, custom_session_create_schema,
+    # movie_list_schema, match_list_schema
+)
 from users.models import User
 
 
@@ -21,6 +21,8 @@ class CreateUpdateUserView(APIView):
     """
     View to get, create and update user data.
     """
+
+    @user_schema['get']
     def get(self, request):
         device_id = request.data.get('device_id', False)
         if device_id:
@@ -31,13 +33,7 @@ class CreateUpdateUserView(APIView):
         return Response({'error_message': 'Device id не был передан.'},
                         status=status.HTTP_400_BAD_REQUEST)
 
-    @extend_schema(
-        request=CustomUserSerializer,
-        responses={
-            201: CustomUserSerializer,
-            400: OpenApiResponse(description='Bad Request'),
-        }
-    )
+    @user_schema['create']
     def post(self, request):
         serializer = CustomUserSerializer(
             data=request.data
@@ -49,21 +45,7 @@ class CreateUpdateUserView(APIView):
         return Response(serializer.errors,
                         status=status.HTTP_400_BAD_REQUEST)
 
-    @extend_schema(
-        parameters=[
-            OpenApiParameter(
-                name='device_id',
-                type=str,
-                location=OpenApiParameter.QUERY,
-                required=True,
-            )
-        ],
-        request=CustomUserSerializer,
-        responses={
-            200: CustomUserSerializer,
-            400: OpenApiResponse(description='Bad Request'),
-        }
-    )
+    @user_schema['update']
     def put(self, request):
         device_id = request.data.get('device_id', False)
         if device_id:
@@ -100,6 +82,7 @@ class UserSessionListView(generics.ListAPIView):
 
     serializer_class = CustomSessionSerializer
 
+    @user_session_list_schema['get']
     def get_queryset(self):
         user_id = self.kwargs['user_id']
         return CustomSession.objects.filter(users__id=user_id)
@@ -112,14 +95,13 @@ class MovieListView(generics.ListAPIView):
     serializer_class = MovieSerializer
 
 
-class MatchListView(generics.ListAPIView):
+class MatchListView(viewsets.ModelViewSet):
     """Представление списка избранных фильмов (совпадений)."""
 
     serializer_class = MovieSerializer
 
+    @match_list_schema['get']
     def get_queryset(self):
         session_id = self.request.session.get('session_id')
-        if session_id:
-            session = CustomSession.objects.get(id=session_id)
-            return session.movies.filter(matched=True)
-        return Movie.objects.none()
+        session = get_object_or_404(CustomSession, id=session_id)
+        return session.matched_movies.all()

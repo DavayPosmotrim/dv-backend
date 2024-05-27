@@ -1,11 +1,16 @@
-from django.urls import path
+from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+from rest_framework.routers import DefaultRouter
 
 from .views import (CreateUpdateUserView, CustomSessionCreateView,
                     GenreListView, MatchListView, MovieListView,
                     UserSessionListView)
 
+router = DefaultRouter()
+router.register(r'matches', MatchListView, basename='match')
+
 urlpatterns = [
+    path('', include(router.urls)),
     path('v1/users/',
          CreateUpdateUserView.as_view(),
          name='create_update_user'),
@@ -21,7 +26,7 @@ urlpatterns = [
         name='user_sessions'
     ),
     path('movies/', MovieListView.as_view(), name='movie_list'),
-    path('matches/', MatchListView.as_view(), name='match_list'),
+    # path('matches/', MatchListView.as_view(), name='match_list'),
     path('schema/', SpectacularAPIView.as_view(), name='schema'),
     path('schema/docs/', SpectacularSwaggerView.as_view(url_name='schema')),
 ]
