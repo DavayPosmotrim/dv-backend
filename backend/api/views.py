@@ -1,3 +1,4 @@
+from custom_sessions.models import CustomSession
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, status, viewsets
 from rest_framework.response import Response
@@ -11,7 +12,6 @@ from services.schemas import (
     # movie_list_schema, match_list_schema
 )
 from users.models import User
-
 
 from .serializers import (CustomSessionSerializer, CustomUserSerializer,
                           GenreSerializer, MovieSerializer)
