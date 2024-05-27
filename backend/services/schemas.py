@@ -1,15 +1,7 @@
-from drf_spectacular.utils import (
-    extend_schema, OpenApiParameter, OpenApiResponse
-)
-from api.serializers import (
-    CustomSessionSerializer,
-    CustomUserSerializer,
-    MovieSerializer,
-    # GenreSerializer,
-    # CustomSessionSerializer,
-    # UserMovieVoteSerializer
-)
-
+from api.serializers import (  # GenreSerializer,; CustomSessionSerializer,; UserMovieVoteSerializer
+    CustomSessionSerializer, CustomUserSerializer, MovieSerializer)
+from drf_spectacular.utils import (OpenApiParameter, OpenApiResponse,
+                                   extend_schema)
 
 user_schema = {
     'get': extend_schema(
