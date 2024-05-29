@@ -1,6 +1,5 @@
-import base64
-import os
-import time
+import string
+import random
 
 from django.db import models
 from movies.models import Movie
@@ -9,38 +8,20 @@ from services.utils import format_date
 from users.models import User
 
 
-# вариант быстрого генератора id с проверкой уникальности
-# и наличием букв в идентификаторе
-def generate_session_id():
-    # Получает текущее время в миллисекундах
-    current_time = int(time.time() * 1000)
-    # генерирует случайные байты
-    random_bytes = os.urandom(1)
-    id_bytes = current_time.to_bytes(4, byteorder='big') + random_bytes
-    id_str = base64.b64encode(
-        id_bytes,
-        altchars=b'-_').decode('ascii')
-    if len(id_str) == 8 and not CustomSession.objects.filter(
-        id=id_str
-    ).exists():
-        return id_str
-    else:
-        return generate_session_id()
+def generate_id():
+    return ''.join(random.choices(string.ascii_letters + string.digits, k=8))
 
 
 class CustomSession(models.Model):
     """Модель комнаты/сеанса. """
 
-    # id = models.CharField(   # вариант для использ. со служебной функцией
-    #     primary_key=True,
-    #     max_length=8,
-    #     default=generate_session_id,
-    #     editable=False
-    # )
-
-    # уникальность поля id обеспечена типом поля
-    # тогда импорт служебной функции не нужен
-    id = models.AutoField(primary_key=True)
+    id = models.CharField(
+        primary_key=True,
+        default=generate_id,
+        max_length=8,
+        editable=False,
+        verbose_name="Уникальный идентификатор сессии"
+    )
     users = models.ManyToManyField(
         User,
         verbose_name='Пользователь',
@@ -65,15 +46,8 @@ class CustomSession(models.Model):
         verbose_name = "Сеанс"
         verbose_name_plural = "Сеансы"
 
-    def save(self, *args, **kwargs):
-        # присваивает полю id восьмизначный строковый идентификатор
-        # если принципиально наличие букв, то этот способ не подходит
-        if not self.id:
-            self.id = f"{self.pk:08d}"
-        super().save(*args, **kwargs)
-
     def __str__(self):
-        return self.id
+        return f"CustomSession {self.id or 'Unknown'}"
 
     def get_formatted_date(self):
         if self.date:
@@ -101,4 +75,4 @@ class UserMovieVote(models.Model):
         verbose_name_plural = "Голоса"
 
     def __str__(self):
-        return self.movie
+        return f"{self.user} - {str(self.movie)}"
