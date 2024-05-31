@@ -1,6 +1,7 @@
 from custom_sessions.models import CustomSession
 # from django.db.models import Count
 from django.shortcuts import get_object_or_404
+from movies.models import Genre, Movie
 from rest_framework import generics, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
