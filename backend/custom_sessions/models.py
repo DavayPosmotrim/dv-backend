@@ -40,9 +40,15 @@ class CustomSession(models.Model):
         choices=STATUS_CHOICES,
         default='draft',
     )
+    matched_movies = models.ManyToManyField(
+        Movie,
+        related_name='matched_sessions',
+        verbose_name='Фильм',
+    )
 
     class Meta:
         ordering = ("date",)
+        default_related_name = 'custom_sessions'
         verbose_name = "Сеанс"
         verbose_name_plural = "Сеансы"
 
@@ -54,25 +60,3 @@ class CustomSession(models.Model):
             return format_date(self.date)
         else:
             return 'Дата не установлена'
-
-
-class UserMovieVote(models.Model):
-    """Модель голоса пользователя за фильм в рамках сессии. """
-
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE
-    )
-    movie = models.ForeignKey(
-        Movie, on_delete=models.CASCADE
-    )
-    session = models.ForeignKey(
-        CustomSession, on_delete=models.CASCADE
-    )
-
-    class Meta:
-        ordering = ("movie",)
-        verbose_name = "Голос"
-        verbose_name_plural = "Голоса"
-
-    def __str__(self):
-        return f"{self.user} - {str(self.movie)}"

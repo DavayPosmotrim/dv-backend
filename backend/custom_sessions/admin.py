@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import CustomSession, UserMovieVote
+from .models import CustomSession
 
 
 @admin.register(CustomSession)
@@ -10,10 +10,3 @@ class CustomSessionAdmin(admin.ModelAdmin):
 
     def get_formatted_date(self, obj):
         return obj.get_formatted_date()
-
-
-@admin.register(UserMovieVote)
-class UserMovieVoteAdmin(admin.ModelAdmin):
-    list_display = ('user', 'movie', 'session')
-    list_filter = ('user', 'movie', 'session')
-    search_fields = ('user__username', 'movie__title', 'session__id')

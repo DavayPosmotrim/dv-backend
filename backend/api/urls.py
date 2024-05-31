@@ -4,13 +4,9 @@ from rest_framework.routers import DefaultRouter
 
 from .views import (CreateUpdateUserView, CustomSessionCreateView,
                     GenreListView, CustomSessionViewSet, MovieListView,
-                    UserSessionListView, UserMovieVoteCreateView,
-                    UserVoteListView)
+                    UserSessionListView)
 
 router = DefaultRouter()
-# router.register(
-#     r'matches/(?P<session_id>\w+)', CustomSessionViewSet, basename='match'
-# )
 router.register(
     r'custom_sessions', CustomSessionViewSet, basename='custom_session'
 )
@@ -31,14 +27,6 @@ urlpatterns = [
         UserSessionListView.as_view(),
         name='user_sessions'
     ),
-    path(
-        'votes/<str:session_id>/<int:user_id>/',
-        UserMovieVoteCreateView.as_view(),
-        name='votes_create'),
-    path(
-        'votes/<str:session_id>/',
-        UserVoteListView.as_view({'get': 'list'}),
-        name='votes_list'),
     path('movies/', MovieListView.as_view(), name='movie_list'),
     # path('matches/', MatchListView.as_view(), name='match_list'),
     path('schema/', SpectacularAPIView.as_view(), name='schema'),
