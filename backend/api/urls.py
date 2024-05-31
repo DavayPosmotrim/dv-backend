@@ -1,10 +1,19 @@
-from django.urls import path
+from django.urls import include, path
+from rest_framework.routers import DefaultRouter
 
 from .views import (CreateUpdateUserView, CustomSessionCreateView,
-                    GenreListView, MatchListView, MovieListView,
+                    GenreListView, MatchViewSet, MovieListView,
                     UserSessionListView)
 
+router_api_v1 = DefaultRouter()
+
+router_api_v1.register(r'^matches',
+                       MatchViewSet,
+                       basename='matches')
+
+
 urlpatterns = [
+    path('v1/', include(router_api_v1.urls)),
     path('v1/users/',
          CreateUpdateUserView.as_view(),
          name='create_update_user'),
@@ -20,5 +29,5 @@ urlpatterns = [
         name='user_sessions'
     ),
     path('movies/', MovieListView.as_view(), name='movie_list'),
-    path('matches/', MatchListView.as_view(), name='match_list'),
+
 ]
