@@ -1,6 +1,8 @@
+from rest_framework import serializers
+
 from custom_sessions.models import CustomSession
 from movies.models import Genre, Movie
-from rest_framework import serializers
+from services.kinopoisk.kinopoisk_service import KinopoiskMovies
 from users.models import User
 
 
@@ -54,11 +56,18 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
         fields = ['id', 'movies', 'date', 'status', 'users']
 
     def create(self, validated_data):
-        movies = validated_data.pop('movies')
-        users = validated_data.pop('users')
-        session = CustomSession.objects.create(**validated_data)
-        session.movies.set(movies)
-        session.users.set(users)
+        genres = self.context.get('genres', [])
+        collections = self.context.get('collections', [])
+        kinopoisk_movies = KinopoiskMovies(
+            genres=genres,
+            collections=collections
+        )
+        session = CustomSession.objects.create(
+            **validated_data,
+            movies=Movie.objects.filter(
+                id__in=[movie['id'] for movie in kinopoisk_movies.get_movies()]
+            )
+        )
         return session
 
 

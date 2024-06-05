@@ -95,11 +95,11 @@ class CustomSessionViewSet(viewsets.ReadOnlyModelViewSet):
         return CustomSession.objects.all()
 
     @action(detail=True, methods=['get'])
-    def matched_movies(self, request, *args, **kwargs):
+    def matched_movies(self, request, pk=None, *args, **kwargs):
         session = self.get_object()
         matched_movies = session.matched_movies
-        serializer = MovieSerializer(matched_movies, many=True)
         if matched_movies:
+            serializer = MovieSerializer(matched_movies, many=True)
             return Response(serializer.data)
         else:
             return Response({"message": "Нет ни одного совпадения"})
