@@ -53,7 +53,7 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomSession
-        fields = ['id', 'movies', 'date', 'status', 'users']
+        fields = ['id', 'movies', 'matched_movies', 'date', 'status', 'users']
 
     def create(self, validated_data):
         genres = self.context.get('genres', [])
@@ -62,17 +62,38 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
             genres=genres,
             collections=collections
         )
+        movies_data = kinopoisk_movies.get_movies()
+        # поиск фильмов в собственной БД
+        existing_movies = Movie.objects.filter(
+            id__in=[movie['id'] for movie in movies_data]
+        )
+        existing_movies_ids = [movie.id for movie in existing_movies]
+        # поиск фильмов на кинопоиске, сохранение их в БД
+        new_movies_data = [
+            movie for movie in movies_data
+            if movie['id'] not in existing_movies_ids
+        ]
+        new_movies = [
+            Movie(
+                id=movie['id'],
+                name=movie['name'],
+                genre=movie['genre'],
+                image=movie['image']
+            )
+            for movie in new_movies_data
+        ]
+        Movie.objects.bulk_create(new_movies)
         session = CustomSession.objects.create(
             **validated_data,
             movies=Movie.objects.filter(
-                id__in=[movie['id'] for movie in kinopoisk_movies.get_movies()]
+                id__in=[movie['id'] for movie in movies_data]
             )
         )
         return session
 
 
-class CustomSessionSerializer(serializers.ModelSerializer):
-    """Сериализатор сеанса/комнаты."""
+class WaitingSessionSerializer(serializers.ModelSerializer):
+    """Сериализатор сессии в статусе ожидания."""
 
     users = CustomUserSerializer(many=True, read_only=True)
 
@@ -84,6 +105,37 @@ class CustomSessionSerializer(serializers.ModelSerializer):
             'movies',
             'date',
             'status',
-            'movie_votes',
+        ]
+
+
+class VotingSessionSerializer(serializers.ModelSerializer):
+    """Сериализатор сессии в статусе голосования."""
+
+    users = CustomUserSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = CustomSession
+        fields = [
+            'id',
+            'users',
+            'movies',
             'matched_movies',
+            'date',
+            'status'
+        ]
+
+
+class ClosedSessionSerializer(serializers.ModelSerializer):
+    """Сериализатор закрытой сессии."""
+
+    users = CustomUserSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = CustomSession
+        fields = [
+            'id',
+            'users',
+            'matched_movies',
+            'date',
+            'status'
         ]
