@@ -3,7 +3,12 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework.routers import DefaultRouter
 
 from .views import (CreateUpdateUserView, CustomSessionCreateView,
+<<<<<<< HEAD
                     GenreListView, CustomSessionViewSet, MovieListView)
+=======
+                    CustomSessionViewSet, GenreListView, MovieListView,
+                    UserSessionListView)
+>>>>>>> ccc5b9288a298a380235f7990a04a62384e5149f
 
 router = DefaultRouter()
 router.register(
