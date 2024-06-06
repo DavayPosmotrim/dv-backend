@@ -1,5 +1,5 @@
-from api.serializers import (CustomSessionSerializer, CustomUserSerializer,
-                             MovieSerializer)
+from api.serializers import (
+    CustomSessionSerializer, CustomUserSerializer, MovieSerializer)
 from drf_spectacular.utils import (OpenApiParameter, OpenApiResponse,
                                    extend_schema)
 
