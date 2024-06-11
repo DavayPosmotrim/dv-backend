@@ -1,4 +1,5 @@
 from django.db import models
+
 from services.constants import MAX_MOVIE_NAME_LENGTH
 
 

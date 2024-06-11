@@ -1,13 +1,14 @@
 from random import choice
 
-from custom_sessions.models import CustomSession
 from django.shortcuts import get_object_or_404
-from movies.models import Genre, Movie
 from rest_framework import generics, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from services.schemas import (  # genre_list_schema, custom_session_create_schema,; movie_list_schema, match_list_schema
+
+from custom_sessions.models import CustomSession
+from movies.models import Genre, Movie
+from services.schemas import (
     user_schema, user_session_list_schema)
 from users.models import User
 
