@@ -92,8 +92,6 @@ class CustomSessionViewSet(viewsets.ReadOnlyModelViewSet):
     и списка закрытых сессий пользователя
     с возможностью посмотреть их детали."""
 
-    lookup_field = 'device_id'
-
     def get_serializer_class(self):
         """Разделяет сериализаторы для закрытых(архивных) сессий
         и текущих. Для текущих сессий разделяет сериализаторы
@@ -112,11 +110,14 @@ class CustomSessionViewSet(viewsets.ReadOnlyModelViewSet):
             return ClosedSessionSerializer
 
     def get_queryset(self):
-        device_id = self.kwargs['device_id']
-        return CustomSession.objects.filter(
-            users__device_id=device_id,
-            status__in=['waiting', 'voting', 'closed']
-        )
+        device_id = self.request.headers.get('device-id')
+        if device_id:
+            return CustomSession.objects.filter(
+                users__device_id=device_id,
+                status__in=['waiting', 'voting', 'closed']
+            )
+        else:
+            return CustomSession.objects.none()
 
     @action(detail=True, methods=['get'])
     def matched_movies(self, request, pk=None, *args, **kwargs):
@@ -168,10 +169,10 @@ class CustomSessionViewSet(viewsets.ReadOnlyModelViewSet):
         session = self.get_object()
         movie_ids = [movie.id for movie in session.movies()]
         user_ids = [user.device_id for user in session.users()]
-        self.notify_vote_update(session, user_ids, movie_ids)
+        self.notify_vote_create_update(session, user_ids, movie_ids)
         return Response(status=status.HTTP_201_CREATED)
 
-    def notify_vote_update(self, session, user_ids, movie_ids):
+    def notify_vote_create_update(self, session, user_ids, movie_ids):
         # логика отправки обновления о голосовании через WebSocket
         # с помощью Django Channels
         pass
