@@ -47,7 +47,6 @@ class CustomSession(models.Model):
         Movie,
         null=True,
         blank=True,
-        related_name='matched_sessions',
         verbose_name='Избранный фильм',
     )
 

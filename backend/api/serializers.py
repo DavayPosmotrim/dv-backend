@@ -43,57 +43,80 @@ class MovieSerializer(serializers.ModelSerializer):
 
 
 class CustomSessionCreateSerializer(serializers.ModelSerializer):
-    movies = serializers.PrimaryKeyRelatedField(
-        many=True, queryset=Movie.objects.all()
-    )
-    users = serializers.PrimaryKeyRelatedField(
-        many=True, queryset=User.objects.all()
-    )
-    id = serializers.CharField(read_only=True)
+    """Сериализатор для создания сессии."""
+
+    movies = MovieSerializer(many=True, read_only=True)
 
     class Meta:
         model = CustomSession
-        fields = ['id', 'movies', 'matched_movies', 'date', 'status', 'users']
+        fields = ['id',
+                  'users',
+                  'movies',
+                  'matched_movies',
+                  'date',
+                  'status'
+                  ]
 
     def create(self, validated_data):
-        genres = self.context.get('genres', [])
-        collections = self.context.get('collections', [])
-        kinopoisk_movies = KinopoiskMovies(
-            genres=genres,
-            collections=collections
-        )
-        movies_data = kinopoisk_movies.get_movies()
-        # поиск фильмов в собственной БД
+        kinopoisk_movies = KinopoiskMovies().get_movies()
+        # Проверяем, есть ли фильмы из KinopoiskMovies в нашей базе данных
         existing_movies = Movie.objects.filter(
-            id__in=[movie['id'] for movie in movies_data]
+            id__in=[movie.id for movie in kinopoisk_movies]
         )
-        existing_movies_ids = [movie.id for movie in existing_movies]
-        # поиск фильмов на кинопоиске, сохранение их в БД
-        new_movies_data = [
-            movie for movie in movies_data
-            if movie['id'] not in existing_movies_ids
-        ]
-        new_movies = [
-            Movie(
-                id=movie['id'],
-                name=movie['name'],
-                genre=movie['genre'],
-                image=movie['image']
+        new_movies = {
+            movie for movie in kinopoisk_movies
+            if movie.id not in existing_movies.values_list(
+                'id', flat=True
             )
-            for movie in new_movies_data
-        ]
-        Movie.objects.bulk_create(new_movies)
+        }
+
+        # Сохраняет новые фильмы в базе данных
+        Movie.objects.bulk_create(
+            [Movie(
+                id=movie.id,
+                name=movie.name,
+                genre=movie.genre,
+                image=movie.image
+            ) for movie in new_movies]
+        )
+
+        # Объединяет существующие и новые фильмы
+        movies = set(existing_movies) | new_movies
+        # Создает новый объект сессии
         session = CustomSession.objects.create(
-            **validated_data,
-            movies=Movie.objects.filter(
-                id__in=[movie['id'] for movie in movies_data]
-            )
+            users=self.context['request'].user,
+            **validated_data
         )
+        # Добавляет данные о всех фильмах в создаваемую сессию
+        session.movies.set(movies)
         return session
+
+    def to_representation(self, instance):
+        """Переопределяем метод для вывода данных сессии."""
+        data = super().to_representation(instance)
+        data['movies'] = MovieSerializer(instance.movies.all(), many=True).data
+        return data
+
+
+class DraftSessionSerializer(serializers.ModelSerializer):
+    """Сериализатор сессии в статусе выбора жанра."""
+
+    users = CustomUserSerializer(many=True, read_only=True)
+    movies_genres = GenreSerializer
+
+    class Meta:
+        model = CustomSession
+        fields = [
+            'id',
+            'users',
+            'movies_genres',
+            'date',
+            'status',
+        ]
 
 
 class WaitingSessionSerializer(serializers.ModelSerializer):
-    """Сериализатор сессии в статусе ожидания."""
+    """Сериализатор сессии в статусе ожидания всех пользователей."""
 
     users = CustomUserSerializer(many=True, read_only=True)
 

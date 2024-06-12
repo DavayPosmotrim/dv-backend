@@ -14,6 +14,7 @@ from users.models import User
 
 from .serializers import (ClosedSessionSerializer,
                           CustomSessionCreateSerializer, CustomUserSerializer,
+                          DraftSessionSerializer,
                           GenreSerializer, MovieSerializer,
                           VotingSessionSerializer, WaitingSessionSerializer)
 
@@ -72,7 +73,8 @@ class GenreListView(generics.ListAPIView):
 
 
 class CustomSessionCreateView(generics.CreateAPIView):
-    """Создание пользовательского сеанса."""
+    """Создание пользовательского сеанса
+    при переходе в статус voting."""
 
     queryset = CustomSession.objects.all()
     serializer_class = CustomSessionCreateSerializer
@@ -96,23 +98,22 @@ class CustomSessionViewSet(viewsets.ReadOnlyModelViewSet):
         в зависимости от статуса сессии ."""
         if 'session_id' in self.kwargs:
             status = self.get_object().status
-            if status == 'waiting':
+            if status == 'draft':
+                return DraftSessionSerializer
+            elif status == 'waiting':
                 return WaitingSessionSerializer
             elif status == 'voting':
                 return VotingSessionSerializer
             else:
                 return ClosedSessionSerializer
-            # elif status == 'draft':
-            #     return CustomSessionCreateSerializer или создать нов
         else:
             return ClosedSessionSerializer
 
     def get_queryset(self):
-        device_id = self.request.headers.get('device-id')
+        device_id = self.request.headers.get('device_id')
         if device_id:
             return CustomSession.objects.filter(
-                users__device_id=device_id,
-                status__in=['waiting', 'voting', 'closed']
+                users__device_id=device_id
             )
         else:
             return CustomSession.objects.none()
@@ -160,20 +161,6 @@ class CustomSessionViewSet(viewsets.ReadOnlyModelViewSet):
             return Response(
                 {"message": "Нет ни одной закрытой сессии с мэтчами"}
             )
-
-    @action(detail=True, methods=['post'])
-    def vote(self, request, *args, **kwargs):
-        """Возвращает голоса пользователь-фильм. """
-        session = self.get_object()
-        movie_ids = [movie.id for movie in session.movies()]
-        user_ids = [user.device_id for user in session.users()]
-        self.notify_vote_create_update(session, user_ids, movie_ids)
-        return Response(status=status.HTTP_201_CREATED)
-
-    def notify_vote_create_update(self, session, user_ids, movie_ids):
-        # логика отправки обновления о голосовании через WebSocket
-        # с помощью Django Channels
-        pass
 
 
 class MovieListView(generics.ListAPIView):
