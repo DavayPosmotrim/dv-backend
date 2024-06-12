@@ -1,22 +1,17 @@
 from random import choice
 
+from custom_sessions.models import CustomSession
 from django.shortcuts import get_object_or_404
+from movies.models import Genre, Movie
 from rest_framework import generics, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
-from custom_sessions.models import CustomSession
-from movies.models import Genre, Movie
-from services.schemas import (
-    user_schema)
+from services.schemas import user_schema
 from users.models import User
 
-from .serializers import (CustomSessionCreateSerializer,
-                          CustomUserSerializer,
-                          GenreSerializer,
-                          MovieSerializer,
-                          )
+from .serializers import (CustomSessionCreateSerializer, CustomUserSerializer,
+                          GenreSerializer, MovieSerializer)
 
 
 class CreateUpdateUserView(APIView):
