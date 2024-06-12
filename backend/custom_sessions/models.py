@@ -2,7 +2,6 @@ import random
 import string
 
 from django.db import models
-
 from movies.models import Movie
 from services.constants import STATUS_CHOICES
 from services.utils import format_date

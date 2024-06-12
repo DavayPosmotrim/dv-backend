@@ -4,7 +4,6 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from .views import (CreateUpdateUserView, CustomSessionCreateView,
                     CustomSessionViewSet, GenreListView, MovieListView)
 
-
 urlpatterns = [
     path('v1/users/',
          CreateUpdateUserView.as_view(),
