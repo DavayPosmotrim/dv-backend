@@ -57,9 +57,29 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
                   'status'
                   ]
 
+    def validate_id(self, value):
+        """
+        Проверяет уникальность сгенерированного идентификатора сессии.
+        """
+        if CustomSession.objects.filter(id=value).exists():
+            raise serializers.ValidationError(
+                "Не удалось сгенерировать уникальный идентификатор."
+            )
+        return value
+
     def create(self, validated_data):
+        genres = self.context.get('genres', [])
+        collections = self.context.get('collections', [])
+        kinopoisk_movies = KinopoiskMovies(
+            genres=genres,
+            collections=collections
+        )
         kinopoisk_movies = KinopoiskMovies().get_movies()
-        # Проверяем, есть ли фильмы из KinopoiskMovies в нашей базе данных
+        if kinopoisk_movies is None:
+            raise serializers.ValidationError(
+                "Данные о фильмах отсутствуют в контексте."
+            )
+        # Проверяет, есть ли фильмы из KinopoiskMovies в нашей базе данных
         existing_movies = Movie.objects.filter(
             id__in=[movie.id for movie in kinopoisk_movies]
         )
@@ -92,7 +112,7 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
         return session
 
     def to_representation(self, instance):
-        """Переопределяем метод для вывода данных сессии."""
+        """Переопределяет метод для вывода данных сессии."""
         data = super().to_representation(instance)
         data['movies'] = MovieSerializer(instance.movies.all(), many=True).data
         return data

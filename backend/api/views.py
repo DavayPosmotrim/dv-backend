@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 from custom_sessions.models import CustomSession
 from movies.models import Genre, Movie
 from services.schemas import (
-    user_schema)
+    match_list_schema, user_schema)
 from users.models import User
 
 from .serializers import (CustomSessionCreateSerializer,
@@ -26,7 +26,7 @@ class CreateUpdateUserView(APIView):
 
     @user_schema['get']
     def get(self, request):
-        device_id = request.data.get('device_id', False)
+        device_id = self.request.headers.get('device_id')
         if device_id:
             user = get_object_or_404(User, device_id=device_id)
             serializer = CustomUserSerializer(user)
@@ -49,7 +49,7 @@ class CreateUpdateUserView(APIView):
 
     @user_schema['update']
     def put(self, request):
-        device_id = request.data.get('device_id', False)
+        device_id = self.request.headers.get('device_id')
         if device_id:
             user = get_object_or_404(User, device_id=device_id)
             serializer = CustomUserSerializer(
@@ -73,9 +73,7 @@ class GenreListView(generics.ListAPIView):
 
 
 class CustomSessionViewSet(viewsets.ModelViewSet):
-    """Представление текущей сессии для пользователя
-    и списка закрытых сессий пользователя
-    с возможностью посмотреть их детали."""
+    """Представление сессий ."""
 
     serializer_class = CustomSessionCreateSerializer
 
@@ -91,11 +89,13 @@ class CustomSessionViewSet(viewsets.ModelViewSet):
         else:
             return Response({"message": "Требуется device_id"})
 
+    @match_list_schema['get']
     @action(detail=True, methods=['get'])
-    def matched_movies(self, request, pk=None, *args, **kwargs):
+    def get_matched_movies(self, request, pk=None):
         """Возвращает фильмы, за которые проголосовали все пользователи
         в сесиии (мэтчи) - или ошибку, если мэтчей нет ."""
-        matched_movies = self.matched_movies()
+        session = get_object_or_404(CustomSession, pk=pk)
+        matched_movies = session.matched_movies
         if matched_movies:
             serializer = MovieSerializer(matched_movies, many=True)
             return Response(serializer.data)
@@ -106,7 +106,7 @@ class CustomSessionViewSet(viewsets.ModelViewSet):
     def get_roulette(self):
         """Возвращает рандомный фильм
         если в списке совпадений более 2 фильмов или ошибку."""
-        matched_movies = self.matched_movies()
+        matched_movies = self.get_matched_movies()
         if matched_movies.count() > 2:
             random_movie = choice(matched_movies)
             serializer = MovieSerializer(random_movie)

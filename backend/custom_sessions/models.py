@@ -29,7 +29,6 @@ class CustomSession(models.Model):
     )
     movies = models.ManyToManyField(
         Movie,
-        null=True,
         blank=True,
         verbose_name='Фильм',
     )
@@ -45,8 +44,8 @@ class CustomSession(models.Model):
     )
     matched_movies = models.ManyToManyField(
         Movie,
-        null=True,
         blank=True,
+        related_name='matched_movies_custom_sessions',
         verbose_name='Избранный фильм',
     )
 

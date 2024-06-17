@@ -1,4 +1,4 @@
-from api.serializers import (CustomSessionSerializer, CustomUserSerializer,
+from api.serializers import (CustomUserSerializer,
                              MovieSerializer)
 from drf_spectacular.utils import (OpenApiParameter, OpenApiResponse,
                                    extend_schema)
@@ -63,21 +63,6 @@ match_list_schema = {
             200: MovieSerializer(many=True),
             404: OpenApiResponse(
                 description='Совпадений не нашлось, добавтье больше фильмов'),
-        }
-    )
-}
-
-user_session_list_schema = {
-    'get': extend_schema(
-        summary='Получение списка сессий пользователя',
-        description=(
-            'Возвращает список сессий текущего пользователя. '
-        ),
-        methods=['GET'],
-        responses={
-            200: CustomSessionSerializer(many=True),
-            404: OpenApiResponse(
-                description='У вас нет ни одной сессии'),
         }
     )
 }
