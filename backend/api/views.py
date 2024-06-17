@@ -61,7 +61,7 @@ class CreateUpdateUserView(APIView):
                         status=status.HTTP_400_BAD_REQUEST)
 
 
-class GenreListView(mixins.ListModelMixin, viewsets.GenericViewSet):
+class GenreListView(generics.ListAPIView):
     """Представление списка жанров."""
 
     queryset = Genre.objects.all()
