@@ -67,7 +67,11 @@ class KinopoiskMovies(KinopoiskService):
         pattern = self.collections
         if self.genres:
             search_by = 'genres.name'
-            pattern = self.genres
+            pattern = list(map(lambda s: s.lower, self.genres))
+            if not 'аниме' in pattern:
+                pattern += ['!аниме']
+            if not 'мультфильм' in pattern:
+                pattern += ['!мультфильм']
         if pattern:
             params = {
                 search_by: pattern,
