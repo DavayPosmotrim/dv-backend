@@ -1,12 +1,13 @@
 from random import choice
 
-from custom_sessions.models import CustomSession
 from django.shortcuts import get_object_or_404
-from movies.models import Genre, Movie
 from rest_framework import generics, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from custom_sessions.models import CustomSession
+from movies.models import Genre, Movie
 from services.schemas import match_list_schema, user_schema
 from users.models import User
 
@@ -60,7 +61,7 @@ class CreateUpdateUserView(APIView):
                         status=status.HTTP_400_BAD_REQUEST)
 
 
-class GenreListView(generics.ListAPIView):
+class GenreListView(mixins.ListModelMixin, viewsets.GenericViewSet):
     """Представление списка жанров."""
 
     queryset = Genre.objects.all()

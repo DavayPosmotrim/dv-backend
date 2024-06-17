@@ -1,5 +1,5 @@
 from django.db import models
-from services.constants import MAX_DEVICE_ID_LENGTH, MAX_USER_NAME_LENGTH
+from services.constants import MAX_USER_NAME_LENGTH
 from services.validators import validate_name
 
 
@@ -11,10 +11,9 @@ class User(models.Model):
         validators=[validate_name],
         blank=False,
     )
-    device_id = models.CharField(
+    device_id = models.UUIDField(
         verbose_name="ID устройства",
-        max_length=MAX_DEVICE_ID_LENGTH,
-        blank=False,
-        unique=True,
+        editable=False,
+        primary_key=True,
     )
     password = models.CharField(max_length=128, null=True, blank=True)
