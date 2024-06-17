@@ -7,11 +7,7 @@ from rest_framework import generics, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
-from custom_sessions.models import CustomSession
-from movies.models import Genre, Movie
-from services.schemas import (
-    match_list_schema, user_schema)
+from services.schemas import match_list_schema, user_schema
 from users.models import User
 
 from .serializers import (CustomSessionCreateSerializer, CustomUserSerializer,
