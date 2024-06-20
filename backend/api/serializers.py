@@ -10,6 +10,9 @@ from services.validators import validate_name
 from users.models import User
 
 
+logger = logging.getLogger('api')
+
+
 class CustomUserSerializer(serializers.ModelSerializer):
     """Serializer for user."""
 
@@ -69,7 +72,7 @@ class MovieSerializer(serializers.ModelSerializer):
     """Сериализатор краткого представления
     для фильма/списка фильмов."""
 
-    genre = serializers.SlugRelatedField(
+    genres = serializers.SlugRelatedField(
         many=True,
         slug_field='name',
         queryset=Genre.objects.all()
@@ -80,7 +83,7 @@ class MovieSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'name',
-            'genre',
+            'genres',
             'image',
         ]
 
@@ -171,58 +174,57 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
         #     raise serializers.ValidationError(
         #         {"message": "Пользователь с указанным device_id не найден"}
         #     )
-        genres = self.context.get('genres', [])
-        collections = self.context.get('collections', [])
-        if genres:
-            kinopoisk_movies = KinopoiskMovies(genres=genres)
-        elif collections:
-            kinopoisk_movies = KinopoiskMovies(collections=collections)
-        else:
+        # genres = self.context.get('genres', [])
+        # collections = self.context.get('collections', [])
+        genres = validated_data.pop('genres', [])
+        collections = validated_data.pop('collections', [])
+        kinopoisk_service = KinopoiskMovies(
+            genres=genres,
+            collections=collections
+        )
+        kinopoisk_movies_response = kinopoisk_service.get_movies()
+
+        # Логирование ответа от KinopoiskMovies
+        logger.debug("KinopoiskMovies response: %s", kinopoisk_movies_response)
+
+        if kinopoisk_movies_response is None:
             raise serializers.ValidationError(
-                "Необходимо передать либо genres, либо collections."
+                "Данные о фильмах отсутствуют."
             )
-        try:
-            movies_response = kinopoisk_movies.get_movies()
-            if 'items' not in movies_response:
-                raise serializers.ValidationError("Ожидаемый формат ответа от API Кинопоиска не найден.")
-
-            kinopoisk_movies = [
-                Movie(id=movie['id'], name=movie['name'], genre=','.join([genre['name'] for genre in movie['genres']]), image=movie['poster'])
-                for movie in movies_response['items']
-            ]
-        except ValueError as e:
-            logging.error(f"Error getting movies from Kinopoisk: {e}")
-            raise serializers.ValidationError(str(e))
-        # Проверяет, есть ли фильмы из KinopoiskMovies в нашей базе данных
-        existing_movies = Movie.objects.filter(
-            id__in=[movie.id for movie in kinopoisk_movies]
-        )
-        new_movies = {
-            movie for movie in kinopoisk_movies
-            if movie.id not in existing_movies.values_list(
-                'id', flat=True
+        elif 'docs' not in kinopoisk_movies_response:
+            raise serializers.ValidationError(
+                "Данные о фильмах имеют неверный формат."
             )
-        }
 
-        # Сохраняет новые фильмы в базе данных
-        Movie.objects.bulk_create(
-            [Movie(
-                id=movie.id,
-                name=movie.name,
-                genre=movie.genre,
-                image=movie.image
-            ) for movie in new_movies]
-        )
+        kinopoisk_movies = kinopoisk_movies_response['docs']
 
-        # Объединяет существующие и новые фильмы
-        movies = set(existing_movies) | new_movies
-        # Создает новый объект сессии
+        # Создание или получение жанров и фильмов
+        all_movie_ids = []
+        for movie_data in kinopoisk_movies:
+            genres_list = movie_data.get('genres', [])
+            genres_names = [genres['name'] for genres in genres_list if 'name' in genres]
+
+            if not genres_names:
+                logger.warning("Жанры отсутствуют для фильма: %s", movie_data.get('name', 'Без названия'))
+
+            genres_objects = [Genre.objects.get_or_create(name=name)[0] for name in genres_names]
+
+            movie_obj, created = Movie.objects.update_or_create(
+                id=movie_data['id'],
+                defaults={
+                    'name': movie_data['name'],
+                    'image': movie_data.get('poster', {}).get('url', '')
+                }
+            )
+            movie_obj.genres.set(genres_objects)
+            all_movie_ids.append(movie_obj.id)
+
         session = CustomSession.objects.create(
             # users=user,
             **validated_data
         )
         # Добавляет данные о всех фильмах в создаваемую сессию
-        session.movies.set(movies)
+        session.movies.set(all_movie_ids)
         return session
 
     def to_representation(self, instance):

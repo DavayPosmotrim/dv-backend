@@ -1,6 +1,4 @@
 import os
-import logging
-from requests.exceptions import RequestException, JSONDecodeError
 from urllib.parse import urljoin
 
 import requests.exceptions
@@ -35,19 +33,8 @@ class KinopoiskService:
         :param params: Query-параметры запроса.
         """
 
-        # response = requests.get(url, params=params, headers=self.headers)
-        # return response.json()
-        try:
-            response = requests.get(url, params=params, headers=self.headers)
-            response.raise_for_status()
-            return response.json()
-        except (RequestException, JSONDecodeError) as e:
-            logging.error(f"Error making request to {url}: {e}")
-            logging.error(f"Response content: {response.text}")
-            if isinstance(e, JSONDecodeError):
-                raise ValueError("Ошибка при декодировании ответа от API Кинопоиска.")
-            else:
-                raise ValueError("Ошибка при получении данных от API Кинопоиска.")
+        response = requests.get(url, params=params, headers=self.headers)
+        return response.json()
 
 
 class KinopoiskMovies(KinopoiskService):
@@ -99,19 +86,20 @@ class KinopoiskMovies(KinopoiskService):
                 params['sortField'] = 'rating.kp'
                 params['sortType'] = '-1'
 
-            try:
-                response = self._perform_get_request(self.movies_url, params)
-                if 'items' not in response:
-                    raise ValueError("Ожидаемый формат ответа не найден.")
-                return response
-            except ValueError as e:
-                logging.error(f"Error getting movies from Kinopoisk: {e}")
-                raise
-        else:
-            raise ValueError('Необходимо передать genres, либо collections.')
-        #     return self._perform_get_request(self.movies_url, params)
+        #     try:
+        #         response = self._perform_get_request(self.movies_url, params)
+        #         if 'items' not in response:
+        #             raise ValueError("Ожидаемый формат ответа не найден.")
+        #         return response
+        #     except ValueError as e:
+        #         logging.error(f"Error getting movies from Kinopoisk: {e}")
+        #         raise
+        # else:
+        #     raise ValueError('Необходимо передать genres, либо collections.')
+            print(self.movies_url)
+            return self._perform_get_request(self.movies_url, params)
 
-        # raise ValueError('You should pass either genres or collections')
+        raise ValueError('You should pass either genres or collections')
 
 
 class KinopoiskCollections(KinopoiskService):

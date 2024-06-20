@@ -26,7 +26,7 @@ class Movie(models.Model):
         primary_key=True,
         verbose_name="Уникальный код фильма"
     )
-    genre = models.ManyToManyField(
+    genres = models.ManyToManyField(
         Genre,
         verbose_name='Жанр',
         blank=True
@@ -52,19 +52,19 @@ class Movie(models.Model):
         return self.name
 
 
-class GenreMovie(models.Model):
-    """Вспомогательная модель, связывает произведения и жанры."""
+# class GenreMovie(models.Model):
+#     """Вспомогательная модель, связывает произведения и жанры."""
 
-    genre = models.ForeignKey(
-        Genre,
-        verbose_name='Жанр',
-        on_delete=models.CASCADE
-    )
-    movie = models.ForeignKey(
-        Movie,
-        verbose_name='Фильм',
-        on_delete=models.CASCADE
-    )
+#     genre = models.ForeignKey(
+#         Genre,
+#         verbose_name='Жанр',
+#         on_delete=models.CASCADE
+#     )
+#     movie = models.ForeignKey(
+#         Movie,
+#         verbose_name='Фильм',
+#         on_delete=models.CASCADE
+#     )
 
-    class Meta:
-        default_related_name = 'genresmovies'
+#     class Meta:
+#         default_related_name = 'genresmovies'

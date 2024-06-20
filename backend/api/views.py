@@ -110,26 +110,15 @@ class CustomSessionViewSet(viewsets.ModelViewSet):
         #     )
 
         genres = request.data.get('genres', [])
-        if not isinstance(genres, list):
-            genres = [genres]
         collections = request.data.get('collections', [])
-        if not isinstance(collections, list):
-            collections = [collections]
 
-        data = {
-            "date": request.data.get("date"),
-            "genres": genres,
-            "collections": collections,
-            "status": request.data.get("status")
-        }
-
-        serializer = CustomSessionCreateSerializer(data=data, context={
-            'genres': genres,
-            'collections': collections,
-            'request': request
-        })
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        serializer.context.update({
+            'genres': genres,
+            'collections': collections
+        })
+        self.perform_create(serializer)
         # serializer.save(users=[user])
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
