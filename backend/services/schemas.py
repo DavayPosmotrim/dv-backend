@@ -1,4 +1,5 @@
 from api.serializers import (CustomUserSerializer,
+                             CustomSessionCreateSerializer,
                              MovieSerializer)
 from drf_spectacular.utils import (OpenApiParameter, OpenApiResponse,
                                    extend_schema)
@@ -63,6 +64,20 @@ match_list_schema = {
             200: MovieSerializer(many=True),
             404: OpenApiResponse(
                 description='Совпадений не нашлось, добавтье больше фильмов'),
+        }
+    )
+}
+
+session_create_schema = {
+    'post': extend_schema(
+        summary='Создание сесии',
+        description=(
+            'Сохраняет и возвращает новую пользовательскую сессию '
+        ),
+        methods=['POST'],
+        responses={
+            201: CustomSessionCreateSerializer,
+            400: OpenApiResponse(description='Bad Request'),
         }
     )
 }

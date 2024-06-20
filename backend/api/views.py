@@ -1,8 +1,6 @@
 from random import choice
 
-from custom_sessions.models import CustomSession
 from django.shortcuts import get_object_or_404
-from movies.models import Genre, Movie
 from rest_framework import generics, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -13,9 +11,9 @@ from movies.models import Genre, Movie
 from services.schemas import (
     match_list_schema, user_schema)
 from users.models import User
-
 from .serializers import (CustomSessionCreateSerializer, CustomUserSerializer,
-                          GenreSerializer, MovieSerializer)
+                          GenreSerializer, MovieSerializer,
+                          MovieDetailSerializer)
 
 
 class CreateUpdateUserView(APIView):
@@ -24,8 +22,8 @@ class CreateUpdateUserView(APIView):
     """
 
     @user_schema['get']
-    def get(self, request):
-        device_id = self.request.headers.get('device_id')
+    def get(self, request, *args, **kwargs):
+        device_id = kwargs.get('device_id', False)
         if device_id:
             user = get_object_or_404(User, device_id=device_id)
             serializer = CustomUserSerializer(user)
@@ -35,25 +33,31 @@ class CreateUpdateUserView(APIView):
                         status=status.HTTP_400_BAD_REQUEST)
 
     @user_schema['create']
-    def post(self, request):
-        serializer = CustomUserSerializer(
-            data=request.data
-        )
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data,
-                            status=status.HTTP_201_CREATED)
-        return Response(serializer.errors,
+    def post(self, request, *args, **kwargs):
+        device_id = kwargs.get('device_id', False)
+        if device_id:
+            serializer = CustomUserSerializer(
+                data=request.data,
+                context={'device_id': device_id}
+            )
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data,
+                                status=status.HTTP_201_CREATED)
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error_message': 'Device id не был передан.'},
                         status=status.HTTP_400_BAD_REQUEST)
 
     @user_schema['update']
-    def put(self, request):
-        device_id = self.request.headers.get('device_id')
+    def put(self, request, *args, **kwargs):
+        device_id = kwargs.get('device_id', False)
         if device_id:
             user = get_object_or_404(User, device_id=device_id)
             serializer = CustomUserSerializer(
                 user,
-                data=request.data
+                data=request.data,
+                context={'device_id': device_id}
             )
             if serializer.is_valid():
                 serializer.save()
@@ -87,6 +91,47 @@ class CustomSessionViewSet(viewsets.ModelViewSet):
                 return Response({"message": "У вас еще нет сессий"})
         else:
             return Response({"message": "Требуется device_id"})
+
+    def create(self, request, *args, **kwargs):
+        # print(request.headers)
+        # device_id = request.headers.get('device_id')
+        # if not device_id:
+        #     return Response(
+        #         {"message": "Требуется device_id"},
+        #         status=status.HTTP_400_BAD_REQUEST
+        #     )
+
+        # try:
+        #     user = User.objects.get(device_id=device_id)
+        # except User.DoesNotExist:
+        #     return Response(
+        #         {"message": "Пользователь с указанным device_id не найден"},
+        #         status=status.HTTP_404_NOT_FOUND
+        #     )
+
+        genres = request.data.get('genres', [])
+        if not isinstance(genres, list):
+            genres = [genres]
+        collections = request.data.get('collections', [])
+        if not isinstance(collections, list):
+            collections = [collections]
+
+        data = {
+            "date": request.data.get("date"),
+            "genres": genres,
+            "collections": collections,
+            "status": request.data.get("status")
+        }
+
+        serializer = CustomSessionCreateSerializer(data=data, context={
+            'genres': genres,
+            'collections': collections,
+            'request': request
+        })
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        # serializer.save(users=[user])
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @match_list_schema['get']
     @action(detail=True, methods=['get'])
@@ -123,3 +168,12 @@ class MovieListView(generics.ListAPIView):
 
     queryset = Movie.objects.all()
     serializer_class = MovieSerializer
+
+
+class MovieDetailView(APIView):
+    """Представление для получения деталей конкретного фильма."""
+
+    def get(self, request, movie_id):
+        movie = get_object_or_404(Movie, id=movie_id)
+        serializer = MovieDetailSerializer(movie)
+        return Response(serializer.data)
