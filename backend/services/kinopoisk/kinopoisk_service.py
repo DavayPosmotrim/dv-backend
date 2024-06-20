@@ -65,9 +65,14 @@ class KinopoiskMovies(KinopoiskService):
 
         search_by = 'lists'
         pattern = self.collections
+        movie, cartoon, anime = 'movie', 'cartoon', 'anime'
         if self.genres:
             search_by = 'genres.name'
-            pattern = self.genres
+            pattern = list(map(lambda s: s.lower(), self.genres))
+            if 'аниме' not in pattern:
+                anime = '!anime'
+            if 'мультфильм' not in pattern:
+                cartoon = '!cartoon'
         if pattern:
             params = {
                 search_by: pattern,
@@ -75,7 +80,7 @@ class KinopoiskMovies(KinopoiskService):
                 'page': page,
                 'limit': limit,
                 'notNullFields': ('id', 'name'),
-                'type': ('cartoon', 'movie'),
+                'type': [movie, cartoon, anime],
             }
             if sort_by_rating:
                 params['sortField'] = 'rating.kp'
