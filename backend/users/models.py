@@ -16,3 +16,4 @@ class User(models.Model):
         editable=False,
         primary_key=True,
     )
+    password = models.CharField(max_length=128, null=True, blank=True)
