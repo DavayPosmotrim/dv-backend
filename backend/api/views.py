@@ -21,7 +21,7 @@ class CreateUpdateUserView(APIView):
 
     @user_schema['get']
     def get(self, request):
-        device_id = self.request.headers.get('device_id')
+        device_id = request.headers.get('device_id')
         if device_id:
             user = get_object_or_404(User, device_id=device_id)
             serializer = CustomUserSerializer(user)
@@ -32,19 +32,24 @@ class CreateUpdateUserView(APIView):
 
     @user_schema['create']
     def post(self, request):
-        serializer = CustomUserSerializer(
-            data=request.data
-        )
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data,
-                            status=status.HTTP_201_CREATED)
-        return Response(serializer.errors,
+        device_id = request.headers.get('device_id')
+        if device_id:
+            serializer = CustomUserSerializer(
+                data=request.data,
+                context={'device_id': device_id}
+            )
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data,
+                                status=status.HTTP_201_CREATED)
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error_message': 'Device id не был передан.'},
                         status=status.HTTP_400_BAD_REQUEST)
 
     @user_schema['update']
     def put(self, request):
-        device_id = self.request.headers.get('device_id')
+        device_id = request.headers.get('device_id')
         if device_id:
             user = get_object_or_404(User, device_id=device_id)
             serializer = CustomUserSerializer(
