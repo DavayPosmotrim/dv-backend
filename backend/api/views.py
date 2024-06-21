@@ -11,8 +11,8 @@ from services.schemas import match_list_schema, user_schema
 from users.models import User
 
 from .serializers import (CustomSessionCreateSerializer, CustomUserSerializer,
-                          GenreSerializer, MovieSerializer,
-                          MovieDetailSerializer)
+                          GenreSerializer, MovieDetailSerializer,
+                          MovieSerializer)
 
 
 class CreateUpdateUserView(APIView):
