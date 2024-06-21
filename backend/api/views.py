@@ -7,7 +7,9 @@ from rest_framework import generics, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from services.schemas import match_list_schema, user_schema
+from services.schemas import (
+    match_list_schema, movie_detail_schema, user_schema
+)
 from users.models import User
 
 from .serializers import (CustomSessionCreateSerializer, CustomUserSerializer,
@@ -125,6 +127,7 @@ class MovieListView(generics.ListAPIView):
 class MovieDetailView(APIView):
     """Представление для получения деталей конкретного фильма."""
 
+    @movie_detail_schema['get']
     def get(self, request, movie_id):
         movie = get_object_or_404(Movie, id=movie_id)
         serializer = MovieDetailSerializer(movie)

@@ -1,3 +1,5 @@
+import logging
+
 from rest_framework import serializers
 
 from custom_sessions.models import CustomSession
@@ -6,6 +8,9 @@ from services.kinopoisk.kinopoisk_service import (KinopoiskMovieInfo,
                                                   KinopoiskMovies)
 from services.validators import validate_name
 from users.models import User
+
+
+logger = logging.getLogger('serializers')
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
@@ -93,11 +98,11 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
         model = CustomSession
         fields = ['id',
                   #  'users',
-                  'genres',
-                  'collections',
                   'movies',
                   'matched_movies',
                   'date',
+                  'genres',
+                  'collections',
                   'status'
                   ]
 
@@ -124,13 +129,17 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
         #     raise serializers.ValidationError(
         #         {"message": "Пользователь с указанным device_id не найден"}
         #     )
-        genres = self.context.get('genres', [])
-        collections = self.context.get('collections', [])
+        genres = validated_data.pop('genres', [])
+        collections = validated_data.pop('collections', [])
+        logger.debug(f"Genres from request: {genres}")
+        logger.debug(f"Collections from request: {collections}")
         kinopoisk_service = KinopoiskMovies(
             genres=genres,
             collections=collections
         )
         kinopoisk_movies_response = kinopoisk_service.get_movies()
+        print(kinopoisk_movies_response)
+        logger.debug(f"Фильмы с кинопоиска-1: {kinopoisk_movies_response}")
         if kinopoisk_movies_response is None:
             raise serializers.ValidationError(
                 "Данные о фильмах отсутствуют."
@@ -140,6 +149,9 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
                 "Данные о фильмах имеют неверный формат."
             )
         kinopoisk_movies = kinopoisk_movies_response['docs']
+        logger.debug(
+            f"Movies from Kinopoisk (first 3): {kinopoisk_movies[:3]}"
+        )
 
         all_movie_ids = []
         for movie_data in kinopoisk_movies:
@@ -197,12 +209,12 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
                 movie_obj.save()
 
             all_movie_ids.append(movie_obj.id)
-        # Создает новый объект сессии
+
         session = CustomSession.objects.create(
             # users=user,
             **validated_data
         )
-        # Добавляет данные о всех фильмах в создаваемую сессию
+        # Добавление данные о всех фильмах в создаваемую сессию
         session.movies.set(all_movie_ids)
         return session
 
@@ -210,15 +222,23 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
         """Выполняет запрос к API Кинопоиска для получения
         детальной информации о фильме."""
         kinopoisk_movie_info_service = KinopoiskMovieInfo()
-        detailed_movie_data = kinopoisk_movie_info_service.get_movie(
-            movie_id
-        )
+        try:
+            detailed_movie_data = kinopoisk_movie_info_service.get_movie(
+                movie_id
+            )
+        except KeyError as e:
+            logger.error(f"KeyError: {e} for movie_id: {movie_id}")
+            return {}
+        except Exception as e:
+            logger.error(f"Unexpected error: {e} for movie_id: {movie_id}")
+            return {}
+
         return detailed_movie_data
 
     def to_representation(self, instance):
         """Переопределяет метод для вывода данных сессии."""
         data = super().to_representation(instance)
         data['movies'] = MovieDetailSerializer(
-            instance.movies.all(), many=True
+            instance.movies, many=True
         ).data
         return data
