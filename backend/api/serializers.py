@@ -1,9 +1,10 @@
 import logging
 
-from custom_sessions.models import CustomSession
-from movies.models import Genre, Movie
 # from django.shortcuts import get_object_or_404
 from rest_framework import serializers
+
+from custom_sessions.models import CustomSession
+from movies.models import Genre, Movie
 from services.kinopoisk.kinopoisk_service import (KinopoiskMovieInfo,
                                                   KinopoiskMovies)
 from services.validators import validate_name
@@ -71,14 +72,14 @@ class MovieSerializer(serializers.ModelSerializer):
     """Сериализатор краткого представления
     для фильма/списка фильмов."""
 
-    genres = GenreSerializer(many=True)
+    # genres = GenreSerializer(many=True)
 
     class Meta:
         model = Movie
         fields = [
             'id',
             'name',
-            'genres',
+            # 'genres',
             'poster',
         ]
 
@@ -97,9 +98,10 @@ class MovieDetailSerializer(serializers.ModelSerializer):
             'year',
             'countries',
             'poster',
-            'alternativeName',
-            'rating',
-            'movieLength',
+            'alternative_name',
+            'rating_kp',
+            'rating_imdb',
+            'movie_length',
             'genres',
             'persons',
         ]
@@ -181,7 +183,6 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
             f"Movies from Kinopoisk (first 3): {kinopoisk_movies[:3]}"
         )
 
-        # Создание или получение фильмов
         all_movie_ids = []
         for movie_data in kinopoisk_movies:
             movie_id = movie_data['id']
@@ -196,12 +197,28 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
                         name=genre_name
                     )
                     genre_objects.append(genre_obj)
-            logger.debug(
-                f"Genres for movie {movie_data['id']}: {genre_objects}"
-            )
             # Извлечение URL постера
             poster_data = detailed_movie_data.get('poster', {})
             poster_url = poster_data.get('url', '')
+            # Извлечение дополнительных полей
+            description = detailed_movie_data.get('description', '')
+            year = detailed_movie_data.get('year', None)
+            countries_list = detailed_movie_data.get('countries', [])
+            countries = ', '.join(
+                [country['name'] for country in countries_list]
+            )
+            alternative_name = detailed_movie_data.get('alternativeName', '')
+            rating_data = detailed_movie_data.get('rating', {})
+            rating_kp = rating_data.get('kp', None)
+            rating_imdb = rating_data.get('imdb', None)
+            movie_length = detailed_movie_data.get('movieLength', None)
+            persons_list = detailed_movie_data.get('persons', [])
+            persons = [
+                {
+                    'name': person['name'],
+                    'enProfession': person['enProfession']
+                } for person in persons_list
+            ]
             # Получение фильма из БД или сохранение в нее
             movie_obj, created = Movie.objects.get_or_create(
                 id=movie_id,
@@ -210,6 +227,14 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
             if created or not movie_obj.name or not movie_obj.poster:
                 movie_obj.name = movie_data.get('name', '')
                 movie_obj.poster = poster_url
+                movie_obj.description = description
+                movie_obj.year = year
+                movie_obj.countries = countries
+                movie_obj.alternative_name = alternative_name
+                movie_obj.rating_kp = rating_kp
+                movie_obj.rating_imdb = rating_imdb
+                movie_obj.movie_length = movie_length
+                movie_obj.persons = persons
                 movie_obj.genres.set(genre_objects)
                 movie_obj.save()
 
@@ -243,5 +268,5 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         """Переопределяет метод для вывода данных сессии."""
         data = super().to_representation(instance)
-        data['movies'] = MovieSerializer(instance.movies, many=True).data
+        data['movies'] = MovieDetailSerializer(instance.movies, many=True).data
         return data

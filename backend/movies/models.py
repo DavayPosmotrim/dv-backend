@@ -41,6 +41,48 @@ class Movie(models.Model):
         null=True,
         default=None,
     )
+    description = models.TextField(
+        verbose_name="Описание фильма",
+        null=True,
+        blank=True
+    )
+    year = models.IntegerField(
+        verbose_name="Год выпуска",
+        null=True,
+        blank=True
+    )
+    countries = models.CharField(
+        max_length=255,
+        verbose_name="Страны",
+        null=True,
+        blank=True
+    )
+    alternative_name = models.CharField(
+        max_length=MAX_MOVIE_NAME_LENGTH,
+        verbose_name="Альтернативное название",
+        null=True,
+        blank=True
+    )
+    rating_kp = models.FloatField(
+        verbose_name="Рейтинг Кинопоиск",
+        null=True,
+        blank=True
+    )
+    rating_imdb = models.FloatField(
+        verbose_name="Рейтинг IMDb",
+        null=True,
+        blank=True
+    )
+    movie_length = models.IntegerField(
+        verbose_name="Продолжительность фильма (минуты)",
+        null=True,
+        blank=True
+    )
+    persons = models.JSONField(
+        verbose_name="Персоны",
+        null=True,
+        blank=True
+    )
 
     class Meta:
         default_related_name = 'movies'
