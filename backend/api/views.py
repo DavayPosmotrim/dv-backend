@@ -11,7 +11,8 @@ from services.schemas import match_list_schema, user_schema
 from users.models import User
 
 from .serializers import (CustomSessionCreateSerializer, CustomUserSerializer,
-                          GenreSerializer, MovieSerializer)
+                          GenreSerializer, MovieSerializer,
+                          MovieDetailSerializer)
 
 
 class CreateUpdateUserView(APIView):
@@ -119,3 +120,12 @@ class MovieListView(generics.ListAPIView):
 
     queryset = Movie.objects.all()
     serializer_class = MovieSerializer
+
+
+class MovieDetailView(APIView):
+    """Представление для получения деталей конкретного фильма."""
+
+    def get(self, request, movie_id):
+        movie = get_object_or_404(Movie, id=movie_id)
+        serializer = MovieDetailSerializer(movie)
+        return Response(serializer.data)

@@ -3,7 +3,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework.routers import DefaultRouter
 
 from .views import (CreateUpdateUserView, CustomSessionViewSet, GenreListView,
-                    MovieListView)
+                    MovieListView, MovieDetailView)
 
 router = DefaultRouter()
 router.register(
@@ -18,6 +18,10 @@ urlpatterns = [
 
     path('genres/', GenreListView.as_view(), name='genre_list'),
     path('movies/', MovieListView.as_view(), name='movie_list'),
+    path(
+        'movies/<int:movie_id>/',
+        MovieDetailView.as_view(), name='movie_detail'
+    ),
     path('schema/', SpectacularAPIView.as_view(), name='schema'),
     path('schema/docs/', SpectacularSwaggerView.as_view(url_name='schema')),
 ]
