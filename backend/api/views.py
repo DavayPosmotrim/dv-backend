@@ -1,3 +1,4 @@
+import logging
 from random import choice
 
 from django.shortcuts import get_object_or_404
@@ -14,6 +15,9 @@ from users.models import User
 from .serializers import (CustomSessionCreateSerializer, CustomUserSerializer,
                           GenreSerializer, MovieSerializer,
                           MovieDetailSerializer)
+
+
+logger = logging.getLogger('serializers')
 
 
 class CreateUpdateUserView(APIView):
@@ -91,36 +95,6 @@ class CustomSessionViewSet(viewsets.ModelViewSet):
                 return Response({"message": "У вас еще нет сессий"})
         else:
             return Response({"message": "Требуется device_id"})
-
-    def create(self, request, *args, **kwargs):
-        # print(request.headers)
-        # device_id = request.headers.get('device_id')
-        # if not device_id:
-        #     return Response(
-        #         {"message": "Требуется device_id"},
-        #         status=status.HTTP_400_BAD_REQUEST
-        #     )
-
-        # try:
-        #     user = User.objects.get(device_id=device_id)
-        # except User.DoesNotExist:
-        #     return Response(
-        #         {"message": "Пользователь с указанным device_id не найден"},
-        #         status=status.HTTP_404_NOT_FOUND
-        #     )
-
-        genres = request.data.get('genres', [])
-        collections = request.data.get('collections', [])
-
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.context.update({
-            'genres': genres,
-            'collections': collections
-        })
-        self.perform_create(serializer)
-        # serializer.save(users=[user])
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @match_list_schema['get']
     @action(detail=True, methods=['get'])

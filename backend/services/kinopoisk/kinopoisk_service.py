@@ -86,16 +86,6 @@ class KinopoiskMovies(KinopoiskService):
                 params['sortField'] = 'rating.kp'
                 params['sortType'] = '-1'
 
-        #     try:
-        #         response = self._perform_get_request(self.movies_url, params)
-        #         if 'items' not in response:
-        #             raise ValueError("Ожидаемый формат ответа не найден.")
-        #         return response
-        #     except ValueError as e:
-        #         logging.error(f"Error getting movies from Kinopoisk: {e}")
-        #         raise
-        # else:
-        #     raise ValueError('Необходимо передать genres, либо collections.')
             print(self.movies_url)
             return self._perform_get_request(self.movies_url, params)
 
