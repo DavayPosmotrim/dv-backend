@@ -8,59 +8,12 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from services.schemas import (
-    match_list_schema, movie_detail_schema, user_schema
+    match_list_schema, movie_detail_schema
 )
-from users.models import User
 
-from .serializers import (CustomSessionCreateSerializer, CustomUserSerializer,
+from .serializers import (CustomSessionCreateSerializer,
                           GenreSerializer, MovieSerializer,
                           MovieDetailSerializer)
-
-
-class CreateUpdateUserView(APIView):
-    """
-    View to get, create and update user data.
-    """
-
-    @user_schema['get']
-    def get(self, request):
-        device_id = self.request.headers.get('device_id')
-        if device_id:
-            user = get_object_or_404(User, device_id=device_id)
-            serializer = CustomUserSerializer(user)
-            return Response(serializer.data,
-                            status=status.HTTP_200_OK)
-        return Response({'error_message': 'Device id не был передан.'},
-                        status=status.HTTP_400_BAD_REQUEST)
-
-    @user_schema['create']
-    def post(self, request):
-        serializer = CustomUserSerializer(
-            data=request.data
-        )
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data,
-                            status=status.HTTP_201_CREATED)
-        return Response(serializer.errors,
-                        status=status.HTTP_400_BAD_REQUEST)
-
-    @user_schema['update']
-    def put(self, request):
-        device_id = self.request.headers.get('device_id')
-        if device_id:
-            user = get_object_or_404(User, device_id=device_id)
-            serializer = CustomUserSerializer(
-                user,
-                data=request.data
-            )
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data)
-            return Response(serializer.errors,
-                            status=status.HTTP_400_BAD_REQUEST)
-        return Response({'error_message': 'Device id не был передан.'},
-                        status=status.HTTP_400_BAD_REQUEST)
 
 
 class GenreListView(generics.ListAPIView):
@@ -74,18 +27,19 @@ class CustomSessionViewSet(viewsets.ModelViewSet):
     """Представление сессий ."""
 
     serializer_class = CustomSessionCreateSerializer
+    queryset = CustomSession.objects.all()
 
-    def get_queryset(self):
-        device_id = self.request.headers.get('device_id')
-        if device_id:
-            try:
-                return CustomSession.objects.filter(
-                    users__device_id=device_id
-                )
-            except CustomSession.DoesNotExist:
-                return Response({"message": "У вас еще нет сессий"})
-        else:
-            return Response({"message": "Требуется device_id"})
+    # def get_queryset(self):
+    #     device_id = self.request.headers.get('device_id')
+    #     if device_id:
+    #         try:
+    #             return CustomSession.objects.filter(
+    #                 users__device_id=device_id
+    #             )
+    #         except CustomSession.DoesNotExist:
+    #             return Response({"message": "У вас еще нет сессий"})
+    #     else:
+    #         return Response({"message": "Требуется device_id"})
 
     @match_list_schema['get']
     @action(detail=True, methods=['get'])

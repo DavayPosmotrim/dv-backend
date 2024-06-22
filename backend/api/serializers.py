@@ -49,7 +49,7 @@ class MovieSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'name',
-            'poster',
+            'poster'
         ]
 
 
@@ -138,7 +138,6 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
             collections=collections
         )
         kinopoisk_movies_response = kinopoisk_service.get_movies()
-        print(kinopoisk_movies_response)
         logger.debug(f"Фильмы с кинопоиска-1: {kinopoisk_movies_response}")
         if kinopoisk_movies_response is None:
             raise serializers.ValidationError(
@@ -167,6 +166,9 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
                         name=genre_name
                     )
                     genre_objects.append(genre_obj)
+            logger.debug(
+                f"Genres for movie {movie_data['id']}: {genre_objects}"
+            )
             # Извлечение URL постера
             poster_data = detailed_movie_data.get('poster', {})
             poster_url = poster_data.get('url', '')

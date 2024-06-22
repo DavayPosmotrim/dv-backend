@@ -26,7 +26,7 @@ class Movie(models.Model):
         primary_key=True,
         verbose_name="Уникальный код фильма"
     )
-    genre = models.ManyToManyField(
+    genres = models.ManyToManyField(
         Genre,
         verbose_name='Жанр',
         blank=True

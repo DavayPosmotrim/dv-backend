@@ -15,7 +15,7 @@ class MovieAdmin(admin.ModelAdmin):
     """Интерфейс модели фильма."""
     list_display = ('id', 'name', 'get_genres')
     search_fields = ('name',)
-    list_filter = ('genre',)
+    list_filter = ('genres',)
 
     def get_genres(self, obj):
         """Возвращает жанры к фильму в виде строки ."""
