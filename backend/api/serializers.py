@@ -2,6 +2,7 @@ from custom_sessions.models import CustomSession
 from movies.models import Genre, Movie
 from rest_framework import serializers
 from services.kinopoisk.kinopoisk_service import KinopoiskMovies
+from services.validators import validate_name
 from users.models import User
 
 

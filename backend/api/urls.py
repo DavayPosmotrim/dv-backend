@@ -12,7 +12,7 @@ router.register(
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('v1/users/',
+    path('users/',
          CreateUpdateUserView.as_view(),
          name='create_update_user'),
 
