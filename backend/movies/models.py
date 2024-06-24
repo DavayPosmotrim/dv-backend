@@ -15,8 +15,29 @@ class Genre(models.Model):
         verbose_name_plural = "Жанры"
         ordering = ("name",)
 
-    def __str__(self):
-        return self.name
+
+class Collection(models.Model):
+    """Модель подборки."""
+
+    name = models.CharField(
+        "Название подборки",
+        max_length=MAX_MOVIE_NAME_LENGTH,
+    )
+    slug = models.SlugField(
+        unique=True,
+        null=True
+    )
+    cover = models.ImageField(
+        "Ссылка на изображение",
+        upload_to="collections/",
+        null=True,
+        default=None
+    )
+
+    class Meta:
+        verbose_name = "Подборка"
+        verbose_name_plural = "Подборка"
+        ordering = ("name",)
 
 
 class Movie(models.Model):

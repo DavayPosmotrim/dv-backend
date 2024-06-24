@@ -1,8 +1,12 @@
 from random import choice
 
 from custom_sessions.models import CustomSession
+from services.kinopoisk.kinopoisk_service import (
+    KinopoiskCollections,
+    KinopoiskGenres
+)
 from django.shortcuts import get_object_or_404
-from movies.models import Genre, Movie
+from movies.models import Movie
 from rest_framework import generics, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -11,16 +15,48 @@ from services.schemas import (
     match_list_schema, movie_detail_schema
 )
 
-from .serializers import (CustomSessionCreateSerializer,
-                          GenreSerializer, MovieSerializer,
+from .serializers import (CollectionSerializer,
+                          CustomSessionCreateSerializer, GenreSerializer,
+                          #  GenreSerializer,
+                          MovieSerializer,
                           MovieDetailSerializer)
 
 
-class GenreListView(generics.ListAPIView):
+# class GenreListView(generics.ListAPIView):
+#     """Представление списка жанров."""
+
+#     queryset = Genre.objects.all()
+#     serializer_class = GenreSerializer
+
+
+class GenreListView(APIView):
     """Представление списка жанров."""
 
-    queryset = Genre.objects.all()
-    serializer_class = GenreSerializer
+    def get(self, request):
+        kinopoisk_service = KinopoiskGenres()
+        genres_data = kinopoisk_service.get_genres()
+        if not genres_data:
+            return Response(
+                {"detail": "Ошибка получения жанров с Кинопоиска"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        serializer = GenreSerializer(genres_data, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class CollectionListView(APIView):
+    """Представление списка подборок."""
+
+    def get(self, request):
+        kinopoisk_service = KinopoiskCollections()
+        collections_data = kinopoisk_service.get_collections()
+        if not collections_data:
+            return Response(
+                {"detail": "Ошибка получения подборок с Кинопоиска"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        serializer = CollectionSerializer(collections_data['docs'], many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class CustomSessionViewSet(viewsets.ModelViewSet):

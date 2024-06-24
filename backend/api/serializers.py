@@ -3,7 +3,7 @@ import logging
 from rest_framework import serializers
 
 from custom_sessions.models import CustomSession
-from movies.models import Genre, Movie
+from movies.models import Collection, Genre, Movie
 from rest_framework import serializers
 from services.kinopoisk.kinopoisk_service import (KinopoiskMovieInfo,
                                                   KinopoiskMovies)
@@ -29,6 +29,26 @@ class CustomUserSerializer(serializers.ModelSerializer):
         data['device_id'] = self.context.get('device_id')
         validate_name(data['name'])
         return data
+
+
+class CollectionSerializer(serializers.ModelSerializer):
+    """Сериализатор подборки."""
+
+    cover = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Collection
+        fields = [
+            'name',
+            'slug',
+            'cover'
+        ]
+
+    def get_cover(self, obj):
+        return (
+            obj['cover']['url'] if 'cover' in obj
+            and 'url' in obj['cover'] else None
+        )
 
 
 class GenreSerializer(serializers.ModelSerializer):
@@ -87,7 +107,7 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
         child=serializers.CharField(), required=False
     )
     movies = serializers.PrimaryKeyRelatedField(
-        many=True, required=False, allow_empty=True,
+        many=True, required=False,
         read_only=True
     )
     matched_movies = serializers.PrimaryKeyRelatedField(
@@ -197,7 +217,7 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
                 id=movie_id,
             )
 
-            if created or not movie_obj.name or not movie_obj.poster:
+            if created:
                 movie_obj.name = movie_data.get('name', '')
                 movie_obj.poster = poster_url
                 movie_obj.description = description
