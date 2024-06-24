@@ -21,7 +21,9 @@ urlpatterns = [
     #      name='create_update_user'),
 
     path('genres/', GenreListView.as_view(), name='genre_list'),
-    path('collections/', CollectionListView.as_view(), name='collections_list'),
+    path(
+        'collections/', CollectionListView.as_view(), name='collections_list'
+    ),
     path('movies/', MovieListView.as_view(), name='movie_list'),
     path(
         'movies/<int:movie_id>/',
