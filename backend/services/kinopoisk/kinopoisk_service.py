@@ -154,6 +154,7 @@ class KinopoiskMovieInfo(KinopoiskService):
             'poster',
             'alternativeName',
             'rating',
+            'votes',
             'movieLength',
             'genres',
             'persons',

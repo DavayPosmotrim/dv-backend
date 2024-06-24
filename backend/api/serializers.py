@@ -88,6 +88,8 @@ class MovieDetailSerializer(serializers.ModelSerializer):
             'alternative_name',
             'rating_kp',
             'rating_imdb',
+            'votes_kp',
+            'votes_imdb',
             'movie_length',
             'genres',
             'persons',
@@ -201,6 +203,9 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
             rating_data = detailed_movie_data.get('rating', {})
             rating_kp = rating_data.get('kp', None)
             rating_imdb = rating_data.get('imdb', None)
+            votes_data = detailed_movie_data.get('votes', {})
+            votes_kp = votes_data.get('kp', None)
+            votes_imdb = votes_data.get('imdb', None)
             movie_length = detailed_movie_data.get('movieLength', None)
             persons_list = detailed_movie_data.get('persons', [])
             persons = [
@@ -223,6 +228,8 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
                 movie_obj.alternative_name = alternative_name
                 movie_obj.rating_kp = rating_kp
                 movie_obj.rating_imdb = rating_imdb
+                movie_obj.votes_kp = votes_kp
+                movie_obj.votes_imdb = votes_imdb
                 movie_obj.movie_length = movie_length
                 movie_obj.persons = persons
                 movie_obj.genres.set(genre_objects)

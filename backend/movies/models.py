@@ -94,6 +94,16 @@ class Movie(models.Model):
         null=True,
         blank=True
     )
+    votes_kp = models.IntegerField(
+        verbose_name="Голоса Кинопоиск",
+        null=True,
+        blank=True
+    )
+    votes_imdb = models.IntegerField(
+        verbose_name="Голоса IMDb",
+        null=True,
+        blank=True
+    )
     movie_length = models.IntegerField(
         verbose_name="Продолжительность фильма (минуты)",
         null=True,
