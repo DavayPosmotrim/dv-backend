@@ -176,67 +176,58 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
         for movie_data in kinopoisk_movies:
             movie_id = movie_data['id']
             detailed_movie_data = self.get_movie_details(movie_id)
-            # Извлечение жанров
-            movie_genres = detailed_movie_data.get('genres', [])
-            genre_objects = []
-            for genre in movie_genres:
-                genre_name = genre.get('name', '')
-                if genre_name:
-                    genre_obj, created = Genre.objects.get_or_create(
-                        name=genre_name
-                    )
-                    genre_objects.append(genre_obj)
-            logger.debug(
-                f"Genres for movie {movie_data['id']}: {genre_objects}"
-            )
-            # Извлечение URL постера
-            poster_data = detailed_movie_data.get('poster', {})
-            poster_url = poster_data.get('url', '')
-            # Извлечение дополнительных полей
-            description = detailed_movie_data.get('description', '')
-            year = detailed_movie_data.get('year', None)
-            countries_list = detailed_movie_data.get('countries', [])
-            countries = ', '.join(
-                [country['name'] for country in countries_list]
-            )
-            alternative_name = detailed_movie_data.get('alternativeName', '')
-            rating_data = detailed_movie_data.get('rating', {})
-            rating_kp = rating_data.get('kp', None)
-            rating_imdb = rating_data.get('imdb', None)
-            votes_data = detailed_movie_data.get('votes', {})
-            votes_kp = votes_data.get('kp', None)
-            votes_imdb = votes_data.get('imdb', None)
-            movie_length = detailed_movie_data.get('movieLength', None)
-            persons_list = detailed_movie_data.get('persons', [])
-            persons = [
-                {
-                    'name': person['name'],
-                    'enProfession': person['enProfession']
-                } for person in persons_list
-            ]
             # Получение фильма из БД или сохранение в нее
             movie_obj, created = Movie.objects.get_or_create(
                 id=movie_id,
             )
-
             if created:
+                movie_genres = detailed_movie_data.get('genres', [])
+                genre_objects = []
+                for genre in movie_genres:
+                    genre_name = genre.get('name', '')
+                    if genre_name:
+                        genre_obj, created = Genre.objects.get_or_create(
+                            name=genre_name
+                        )
+                        genre_objects.append(genre_obj)
+                logger.debug(
+                    f"Genres for movie {movie_data['id']}: {genre_objects}"
+                )
+                poster_data = detailed_movie_data.get('poster', {})
+                countries_list = detailed_movie_data.get('countries', [])
+                countries = ', '.join(
+                    [country['name'] for country in countries_list]
+                )
+                rating_data = detailed_movie_data.get('rating', {})
+                votes_data = detailed_movie_data.get('votes', {})
+                persons_list = detailed_movie_data.get('persons', [])
+                persons = [
+                    {
+                        'name': person['name'],
+                        'enProfession': person['enProfession']
+                    } for person in persons_list
+                ]
                 movie_obj.name = movie_data.get('name', '')
-                movie_obj.poster = poster_url
-                movie_obj.description = description
-                movie_obj.year = year
+                movie_obj.poster = poster_data.get('url', '')
+                movie_obj.description = detailed_movie_data.get(
+                    'description', ''
+                )
+                movie_obj.year = detailed_movie_data.get('year', None)
                 movie_obj.countries = countries
-                movie_obj.alternative_name = alternative_name
-                movie_obj.rating_kp = rating_kp
-                movie_obj.rating_imdb = rating_imdb
-                movie_obj.votes_kp = votes_kp
-                movie_obj.votes_imdb = votes_imdb
-                movie_obj.movie_length = movie_length
+                movie_obj.alternative_name = detailed_movie_data.get(
+                    'alternativeName', ''
+                )
+                movie_obj.rating_kp = rating_data.get('kp', None)
+                movie_obj.rating_imdb = rating_data.get('imdb', None)
+                movie_obj.votes_kp = votes_data.get('kp', None)
+                movie_obj.votes_imdb = votes_data.get('imdb', None)
+                movie_obj.movie_length = detailed_movie_data.get(
+                    'movieLength', None
+                )
                 movie_obj.persons = persons
                 movie_obj.genres.set(genre_objects)
                 movie_obj.save()
-
             all_movie_ids.append(movie_obj.id)
-
         session = CustomSession.objects.create(
             # users=user,
             **validated_data
