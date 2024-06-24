@@ -22,7 +22,6 @@ class CustomUserSerializer(serializers.ModelSerializer):
         validate_name(data['name'])
         return data
 
-
 class GenreSerializer(serializers.ModelSerializer):
     """Сериализатор жанра."""
 
