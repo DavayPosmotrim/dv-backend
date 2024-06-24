@@ -1,7 +1,5 @@
 import logging
 
-from rest_framework import serializers
-
 from custom_sessions.models import CustomSession
 from movies.models import Collection, Genre, Movie
 from rest_framework import serializers
@@ -9,7 +7,6 @@ from services.kinopoisk.kinopoisk_service import (KinopoiskMovieInfo,
                                                   KinopoiskMovies)
 from services.validators import validate_name
 from users.models import User
-
 
 logger = logging.getLogger('serializers')
 
