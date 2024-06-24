@@ -2,12 +2,9 @@ from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework.routers import DefaultRouter
 
-from .views import (
-    # CreateUpdateUserView,
-    CollectionListView,
-    CustomSessionViewSet, GenreListView,
-    MovieListView, MovieDetailView
-)
+from .views import (CollectionListView,  # CreateUpdateUserView,
+                    CustomSessionViewSet, GenreListView, MovieDetailView,
+                    MovieListView)
 
 router = DefaultRouter()
 router.register(
