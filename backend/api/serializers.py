@@ -117,7 +117,7 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomSession
         fields = ['id',
-                  #  'users',
+                  'users',
                   'movies',
                   'matched_movies',
                   'date',

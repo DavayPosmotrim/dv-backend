@@ -9,11 +9,66 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from services.kinopoisk.kinopoisk_service import (KinopoiskCollections,
                                                   KinopoiskGenres)
-from services.schemas import match_list_schema, movie_detail_schema
+from services.schemas import (
+    match_list_schema, movie_detail_schema, user_schema
+)
 
 from .serializers import (CollectionSerializer, CustomSessionCreateSerializer,
+                          CustomUserSerializer,
                           GenreSerializer, MovieDetailSerializer,
                           MovieSerializer)
+from users.models import User
+
+
+class CreateUpdateUserView(APIView):
+    """
+    View to get, create and update user data.
+    """
+
+    @user_schema['get']
+    def get(self, request):
+        device_id = request.headers.get('device_id')
+        if device_id:
+            user = get_object_or_404(User, device_id=device_id)
+            serializer = CustomUserSerializer(user)
+            return Response(serializer.data,
+                            status=status.HTTP_200_OK)
+        return Response({'error_message': 'Device id не был передан.'},
+                        status=status.HTTP_400_BAD_REQUEST)
+
+    @user_schema['create']
+    def post(self, request):
+        device_id = request.headers.get('device_id')
+        if device_id:
+            serializer = CustomUserSerializer(
+                data=request.data,
+                context={'device_id': device_id}
+            )
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data,
+                                status=status.HTTP_201_CREATED)
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error_message': 'Device id не был передан.'},
+                        status=status.HTTP_400_BAD_REQUEST)
+
+    @user_schema['update']
+    def put(self, request):
+        device_id = request.headers.get('device_id')
+        if device_id:
+            user = get_object_or_404(User, device_id=device_id)
+            serializer = CustomUserSerializer(
+                user,
+                data=request.data
+            )
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error_message': 'Device id не был передан.'},
+                        status=status.HTTP_400_BAD_REQUEST)
 
 
 class GenreListView(APIView):
