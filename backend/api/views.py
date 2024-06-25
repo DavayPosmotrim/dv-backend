@@ -11,10 +11,9 @@ from services.kinopoisk.kinopoisk_service import (KinopoiskCollections,
                                                   KinopoiskGenres)
 from services.schemas import match_list_schema, movie_detail_schema
 
-from .serializers import (CustomSessionCreateSerializer,
-                          CollectionSerializer,
-                          GenreSerializer,
-                          MovieDetailSerializer, MovieSerializer)
+from .serializers import (CollectionSerializer, CustomSessionCreateSerializer,
+                          GenreSerializer, MovieDetailSerializer,
+                          MovieSerializer)
 
 
 class GenreListView(APIView):
