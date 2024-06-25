@@ -18,7 +18,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
         model = User
         fields = ('name', 'device_id')
         extra_kwargs = {
-            'device_id': {'write_only': True},  # Hide device_id from responses
+            'device_id': {'read_only': True},
         }
 
     def validate(self, data):
@@ -100,10 +100,12 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
     """Сериализатор для создания сессии."""
 
     genres = serializers.ListField(
-        child=serializers.CharField(), required=False
+        child=serializers.CharField(), required=False,
+        write_only=True
     )
     collections = serializers.ListField(
-        child=serializers.CharField(), required=False
+        child=serializers.CharField(), required=False,
+        write_only=True
     )
     movies = serializers.PrimaryKeyRelatedField(
         many=True, required=False,
@@ -113,6 +115,7 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
         many=True, required=False, allow_empty=True,
         read_only=True
     )
+    users = CustomUserSerializer(many=True, required=False, read_only=True)
 
     class Meta:
         model = CustomSession
@@ -137,6 +140,19 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
+        request = self.context.get('request')
+        device_id = request.headers.get('Device-Id')
+        if not device_id:
+            raise serializers.ValidationError(
+                {"message": "Требуется device_id"}
+            )
+
+        try:
+            user = User.objects.get(device_id=device_id)
+        except User.DoesNotExist:
+            raise serializers.ValidationError(
+                {"message": "Пользователь с указанным Device-Id не найден"}
+            )
         genres = validated_data.pop('genres', [])
         collections = validated_data.pop('collections', [])
         logger.debug(f"Genres from request: {genres}")
@@ -219,7 +235,8 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
         session = CustomSession.objects.create(
             **validated_data
         )
-        # Добавление данные о всех фильмах в создаваемую сессию
+        # Добавление данных о всех фильмах в создаваемую сессию
+        session.users.add(user)
         session.movies.set(all_movie_ids)
         return session
 
