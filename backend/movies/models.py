@@ -15,8 +15,29 @@ class Genre(models.Model):
         verbose_name_plural = "Жанры"
         ordering = ("name",)
 
-    def __str__(self):
-        return self.name
+
+class Collection(models.Model):
+    """Модель подборки."""
+
+    name = models.CharField(
+        "Название подборки",
+        max_length=MAX_MOVIE_NAME_LENGTH,
+    )
+    slug = models.SlugField(
+        unique=True,
+        null=True
+    )
+    cover = models.ImageField(
+        "Ссылка на изображение",
+        upload_to="collections/",
+        null=True,
+        default=None
+    )
+
+    class Meta:
+        verbose_name = "Подборка"
+        verbose_name_plural = "Подборка"
+        ordering = ("name",)
 
 
 class Movie(models.Model):
@@ -26,7 +47,7 @@ class Movie(models.Model):
         primary_key=True,
         verbose_name="Уникальный код фильма"
     )
-    genre = models.ManyToManyField(
+    genres = models.ManyToManyField(
         Genre,
         verbose_name='Жанр',
         blank=True
@@ -35,11 +56,63 @@ class Movie(models.Model):
         max_length=MAX_MOVIE_NAME_LENGTH,
         verbose_name="Название фильма"
     )
-    image = models.ImageField(
+    poster = models.ImageField(
         "Ссылка на изображение",
-        upload_to="movies/images/",
+        upload_to="movies/posters/",
         null=True,
         default=None,
+    )
+    description = models.TextField(
+        verbose_name="Описание фильма",
+        null=True,
+        blank=True
+    )
+    year = models.IntegerField(
+        verbose_name="Год выпуска",
+        null=True,
+        blank=True
+    )
+    countries = models.CharField(
+        max_length=255,
+        verbose_name="Страны",
+        null=True,
+        blank=True
+    )
+    alternative_name = models.CharField(
+        max_length=MAX_MOVIE_NAME_LENGTH,
+        verbose_name="Альтернативное название",
+        null=True,
+        blank=True
+    )
+    rating_kp = models.FloatField(
+        verbose_name="Рейтинг Кинопоиск",
+        null=True,
+        blank=True
+    )
+    rating_imdb = models.FloatField(
+        verbose_name="Рейтинг IMDb",
+        null=True,
+        blank=True
+    )
+    votes_kp = models.IntegerField(
+        verbose_name="Голоса Кинопоиск",
+        null=True,
+        blank=True
+    )
+    votes_imdb = models.IntegerField(
+        verbose_name="Голоса IMDb",
+        null=True,
+        blank=True
+    )
+    movie_length = models.IntegerField(
+        verbose_name="Продолжительность фильма (минуты)",
+        null=True,
+        blank=True
+    )
+    persons = models.JSONField(
+        verbose_name="Персоны",
+        null=True,
+        blank=True
     )
 
     class Meta:
@@ -50,21 +123,3 @@ class Movie(models.Model):
 
     def __str__(self):
         return self.name
-
-
-class GenreMovie(models.Model):
-    """Вспомогательная модель, связывает произведения и жанры."""
-
-    genre = models.ForeignKey(
-        Genre,
-        verbose_name='Жанр',
-        on_delete=models.CASCADE
-    )
-    movie = models.ForeignKey(
-        Movie,
-        verbose_name='Фильм',
-        on_delete=models.CASCADE
-    )
-
-    class Meta:
-        default_related_name = 'genresmovies'

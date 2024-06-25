@@ -51,7 +51,7 @@ class KinopoiskMovies(KinopoiskService):
     def get_movies(
         self,
         page: int = 1,
-        limit: int = 250,
+        limit: int = 10,
         sort_by_rating: bool = True,
     ):
         """
@@ -154,6 +154,7 @@ class KinopoiskMovieInfo(KinopoiskService):
             'poster',
             'alternativeName',
             'rating',
+            'votes',
             'movieLength',
             'genres',
             'persons',

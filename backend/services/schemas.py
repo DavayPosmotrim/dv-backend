@@ -1,4 +1,5 @@
-from api.serializers import CustomUserSerializer, MovieSerializer
+from api.serializers import (CustomUserSerializer, MovieDetailSerializer,
+                             MovieSerializer)
 from drf_spectacular.utils import (OpenApiParameter, OpenApiResponse,
                                    extend_schema)
 
@@ -55,13 +56,31 @@ match_list_schema = {
         summary='Получение списка избранных фильмов',
         description=(
             'Возвращает список фильмов, '
-            'которые пользователь отметил как совпадения'
+            'которые пользователи отметили как совпадения'
         ),
         methods=['GET'],
         responses={
             200: MovieSerializer(many=True),
             404: OpenApiResponse(
                 description='Совпадений не нашлось, добавтье больше фильмов'),
+        }
+    )
+}
+
+movie_detail_schema = {
+    'get': extend_schema(
+        summary='Получение подробной информации о фильме',
+        description=(
+            'Возвращает объект фильма '
+            'содержит данные: уникальный номер, название, описание,'
+            'постер, год, страны, оригинальное название, рейтинг, длительность'
+            'жанры, персоны (актеры, режиссеры)'
+        ),
+        methods=['GET'],
+        responses={
+            200: MovieDetailSerializer,
+            404: OpenApiResponse(
+                description='Фильм отсутствует в базе данных'),
         }
     )
 }
