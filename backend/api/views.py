@@ -110,14 +110,6 @@ class CustomSessionViewSet(viewsets.ModelViewSet):
     @session_schema['create']
     def create(self, request, *args, **kwargs):
         return super().create(request, *args, **kwargs)
-    # def get_serializer(self, *args, **kwargs):
-    #     kwargs['context'] = self.get_serializer_context()
-    #     return super().get_serializer(*args, **kwargs)
-
-    # def get_serializer_context(self):
-    #     context = super().get_serializer_context()
-    #     context['request'] = self.request
-    #     return context
 
     @match_list_schema['get']
     @action(detail=True, methods=['get'])
@@ -152,15 +144,20 @@ class CustomSessionViewSet(viewsets.ModelViewSet):
 class MovieListView(generics.ListAPIView):
     """Представление списка фильмов."""
 
-    queryset = Movie.objects.all()
     serializer_class = MovieSerializer
+
+    def get_queryset(self):
+        session_id = self.kwargs.get('session_id')
+        session = get_object_or_404(CustomSession, id=session_id)
+        return session.movies
 
 
 class MovieDetailView(APIView):
     """Представление для получения деталей конкретного фильма."""
 
     @movie_detail_schema['get']
-    def get(self, request, movie_id):
-        movie = get_object_or_404(Movie, id=movie_id)
+    def get(self, request, session_id, movie_id):
+        session = get_object_or_404(CustomSession, id=session_id)
+        movie = get_object_or_404(Movie, id=movie_id, custom_sessions=session)
         serializer = MovieDetailSerializer(movie)
         return Response(serializer.data)

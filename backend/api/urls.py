@@ -20,9 +20,12 @@ urlpatterns = [
     path(
         'collections/', CollectionListView.as_view(), name='collections_list'
     ),
-    path('movies/', MovieListView.as_view(), name='movie_list'),
     path(
-        'movies/<int:movie_id>/',
+        'sessions/<str:session_id>/movies/',
+        MovieListView.as_view(), name='movie_list'
+    ),
+    path(
+        'sessions/<str:session_id>/movies/<int:movie_id>/',
         MovieDetailView.as_view(), name='movie_detail'
     ),
     path('schema/', SpectacularAPIView.as_view(), name='schema'),
