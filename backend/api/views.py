@@ -9,15 +9,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from services.kinopoisk.kinopoisk_service import (KinopoiskCollections,
                                                   KinopoiskGenres)
-from services.schemas import (
-    match_list_schema, movie_detail_schema, user_schema
-)
+from services.schemas import (match_list_schema, movie_detail_schema,
+                              user_schema)
+from users.models import User
 
 from .serializers import (CollectionSerializer, CustomSessionCreateSerializer,
-                          CustomUserSerializer,
-                          GenreSerializer, MovieDetailSerializer,
-                          MovieSerializer)
-from users.models import User
+                          CustomUserSerializer, GenreSerializer,
+                          MovieDetailSerializer, MovieSerializer)
 
 
 class CreateUpdateUserView(APIView):
