@@ -11,59 +11,10 @@ from services.kinopoisk.kinopoisk_service import (KinopoiskCollections,
                                                   KinopoiskGenres)
 from services.schemas import match_list_schema, movie_detail_schema
 
-from .serializers import CollectionSerializer  # GenreSerializer,
-from .serializers import (CustomSessionCreateSerializer, GenreSerializer,
+from .serializers import (CustomSessionCreateSerializer,
+                          CollectionSerializer,
+                          GenreSerializer,
                           MovieDetailSerializer, MovieSerializer)
-
-class CreateUpdateUserView(APIView):
-    """
-    View to get, create and update user data.
-    """
-
-    @user_schema['get']
-    def get(self, request):
-        device_id = request.headers.get('device_id')
-        if device_id:
-            user = get_object_or_404(User, device_id=device_id)
-            serializer = CustomUserSerializer(user)
-            return Response(serializer.data,
-                            status=status.HTTP_200_OK)
-        return Response({'error_message': 'Device id не был передан.'},
-                        status=status.HTTP_400_BAD_REQUEST)
-
-    @user_schema['create']
-    def post(self, request):
-        device_id = request.headers.get('device_id')
-        if device_id:
-            serializer = CustomUserSerializer(
-                data=request.data,
-                context={'device_id': device_id}
-            )
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data,
-                                status=status.HTTP_201_CREATED)
-            return Response(serializer.errors,
-                            status=status.HTTP_400_BAD_REQUEST)
-        return Response({'error_message': 'Device id не был передан.'},
-                        status=status.HTTP_400_BAD_REQUEST)
-
-    @user_schema['update']
-    def put(self, request):
-        device_id = request.headers.get('device_id')
-        if device_id:
-            user = get_object_or_404(User, device_id=device_id)
-            serializer = CustomUserSerializer(
-                user,
-                data=request.data
-            )
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data)
-            return Response(serializer.errors,
-                            status=status.HTTP_400_BAD_REQUEST)
-        return Response({'error_message': 'Device id не был передан.'},
-                        status=status.HTTP_400_BAD_REQUEST)
 
 
 class GenreListView(APIView):
@@ -76,6 +27,7 @@ class GenreListView(APIView):
             return Response(
                 {"detail": "Ошибка получения жанров с Кинопоиска"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
         serializer = GenreSerializer(genres_data, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -100,18 +52,6 @@ class CustomSessionViewSet(viewsets.ModelViewSet):
 
     serializer_class = CustomSessionCreateSerializer
     queryset = CustomSession.objects.all()
-
-    # def get_queryset(self):
-    #     device_id = self.request.headers.get('device_id')
-    #     if device_id:
-    #         try:
-    #             return CustomSession.objects.filter(
-    #                 users__device_id=device_id
-    #             )
-    #         except CustomSession.DoesNotExist:
-    #             return Response({"message": "У вас еще нет сессий"})
-    #     else:
-    #         return Response({"message": "Требуется device_id"})
 
     @match_list_schema['get']
     @action(detail=True, methods=['get'])

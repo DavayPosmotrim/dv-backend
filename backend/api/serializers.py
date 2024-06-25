@@ -137,18 +137,6 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
-        # device_id = self.context['request'].headers.get('device_id')
-        # if not device_id:
-        #     raise serializers.ValidationError(
-        #         {"message": "Требуется device_id"}
-        #     )
-
-        # try:
-        #     user = User.objects.get(device_id=device_id)
-        # except User.DoesNotExist:
-        #     raise serializers.ValidationError(
-        #         {"message": "Пользователь с указанным device_id не найден"}
-        #     )
         genres = validated_data.pop('genres', [])
         collections = validated_data.pop('collections', [])
         logger.debug(f"Genres from request: {genres}")
@@ -229,7 +217,6 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
                 movie_obj.save()
             all_movie_ids.append(movie_obj.id)
         session = CustomSession.objects.create(
-            # users=user,
             **validated_data
         )
         # Добавление данные о всех фильмах в создаваемую сессию

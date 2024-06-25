@@ -13,9 +13,6 @@ router.register(
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('users/',
-         CreateUpdateUserView.as_view(),
-         name='create_update_user'),
     path('genres/', GenreListView.as_view(), name='genre_list'),
     path(
         'collections/', CollectionListView.as_view(), name='collections_list'
