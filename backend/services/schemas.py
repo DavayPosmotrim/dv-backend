@@ -1,10 +1,8 @@
-from api.serializers import (CustomUserSerializer,
-                             CustomSessionCreateSerializer,
-                             MovieDetailSerializer,
+from api.serializers import (CustomSessionCreateSerializer,
+                             CustomUserSerializer, MovieDetailSerializer,
                              MovieSerializer)
 from drf_spectacular.utils import (OpenApiParameter, OpenApiResponse,
                                    extend_schema)
-
 
 device_id_header = OpenApiParameter(
     name='Device-Id',
