@@ -33,8 +33,19 @@ class KinopoiskService:
         :param params: Query-параметры запроса.
         """
 
-        response = requests.get(url, params=params, headers=self.headers)
-        return response.json()
+        try:
+            response = requests.get(url, params=params, headers=self.headers)
+            response.raise_for_status()  # Проверка на успешный статус ответа
+            try:
+                return response.json()
+            except ValueError as e:
+                # Логирование ошибки и возврат пустого результата или исключения
+                print(f"JSON decode error: {e}")
+                return None
+        except requests.exceptions.RequestException as e:
+            # Логирование сетевых ошибок и возврат пустого результата или исключения
+            print(f"Request error: {e}")
+            return None
 
 
 class KinopoiskMovies(KinopoiskService):

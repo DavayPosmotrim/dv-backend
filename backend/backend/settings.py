@@ -154,6 +154,13 @@ SPECTACULAR_SETTINGS = {
         "filter": True,
     },
     "COMPONENT_SPLIT_REQUEST": True,
+    'SECURITY_DEFINITIONS': {
+        'Device-Id Header': {
+            'type': 'apiKey',
+            'name': 'Device-Id',
+            'in': 'header',
+        },
+    },
 }
 
 LOGGING = {
