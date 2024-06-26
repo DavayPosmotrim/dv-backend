@@ -76,11 +76,13 @@ class KinopoiskMovies(KinopoiskService):
         if pattern:
             params = {
                 search_by: pattern,
-                'selectFields': ('id', 'name', 'genres', 'type'),
+                'selectFields': ('id', 'name'),
                 'page': page,
                 'limit': limit,
-                'notNullFields': ('id', 'name', 'genres.name', 'type'),
-                'type': [movie, cartoon, anime, '!animated-series', '!tv-series'],
+                'notNullFields': ('id', 'name'),
+                'type': [
+                    movie, cartoon, anime, '!animated-series', '!tv-series'
+                ],
             }
             if sort_by_rating:
                 params['sortField'] = 'rating.kp'
