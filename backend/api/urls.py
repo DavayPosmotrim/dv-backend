@@ -1,14 +1,18 @@
 from django.urls import include, path
-from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+from drf_spectacular.views import (SpectacularAPIView, SpectacularSwaggerView,
+                                   SpectacularRedocView)
 from rest_framework.routers import DefaultRouter
 
 from .views import (CollectionListView, CreateUpdateUserView,
-                    CustomSessionViewSet, GenreListView, MovieDetailView,
-                    MovieListView)
+                    CustomSessionViewSet, GenreListView, MovieViewSet,
+                    # MovieDetailView, MovieListView
+                    )
 
 router = DefaultRouter()
+router.register(r'sessions', CustomSessionViewSet, basename='sessions')
 router.register(
-    r'sessions', CustomSessionViewSet, basename='sessions'
+    r'sessions/(?P<session_id>[^/.]+)/movies',
+    MovieViewSet, basename='movie'
 )
 
 urlpatterns = [
@@ -20,14 +24,16 @@ urlpatterns = [
     path(
         'collections/', CollectionListView.as_view(), name='collections_list'
     ),
-    path(
-        'sessions/<str:session_id>/movies/',
-        MovieListView.as_view(), name='movie_list'
-    ),
-    path(
-        'sessions/<str:session_id>/movies/<int:movie_id>/',
-        MovieDetailView.as_view(), name='movie_detail'
-    ),
+    # path('movies/', MovieListView.as_view(), name='movie_list'),
+    # path(
+    #     'movies/<int:movie_id>/',
+    #     MovieDetailView.as_view(), name='movie_detail'
+    # ),
     path('schema/', SpectacularAPIView.as_view(), name='schema'),
     path('schema/docs/', SpectacularSwaggerView.as_view(url_name='schema')),
+    path(
+        'schema/redoc/',
+        SpectacularRedocView.as_view(url_name='schema'), name='redoc'
+    ),
+
 ]

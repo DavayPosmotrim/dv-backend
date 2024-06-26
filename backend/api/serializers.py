@@ -1,4 +1,5 @@
 import logging
+import requests.exceptions
 
 from custom_sessions.models import CustomSession
 from movies.models import Collection, Genre, Movie
@@ -96,6 +97,25 @@ class MovieDetailSerializer(serializers.ModelSerializer):
         ]
 
 
+class MovieRouletteSerializer(serializers.ModelSerializer):
+    """Сериализатор представления фильма для рулетки."""
+
+    genres = GenreSerializer(many=True)
+
+    class Meta:
+        model = Movie
+        fields = [
+            'name',
+            'year',
+            'countries',
+            'poster',
+            'alternative_name',
+            'rating_kp',
+            'movie_length',
+            'genres'
+        ]
+
+
 class CustomSessionCreateSerializer(serializers.ModelSerializer):
     """Сериализатор для создания сессии."""
 
@@ -161,16 +181,29 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
             genres=genres,
             collections=collections
         )
-        kinopoisk_movies_response = kinopoisk_service.get_movies()
-        logger.debug(f"Фильмы с кинопоиска-1: {kinopoisk_movies_response}")
-        if kinopoisk_movies_response is None:
-            raise serializers.ValidationError(
-                "Данные о фильмах отсутствуют."
-            )
-        elif 'docs' not in kinopoisk_movies_response:
-            raise serializers.ValidationError(
-                "Данные о фильмах имеют неверный формат."
-            )
+        try:
+            kinopoisk_movies_response = kinopoisk_service.get_movies()
+            logger.debug(f"Фильмы с кинопоиска-1: {kinopoisk_movies_response}")
+            if kinopoisk_movies_response is None:
+                raise serializers.ValidationError(
+                    "Данные о фильмах отсутствуют."
+                )
+            elif 'docs' not in kinopoisk_movies_response:
+                raise serializers.ValidationError(
+                    "Данные о фильмах имеют неверный формат."
+                )
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Ошибка при запросе к Кинопоиску: {e}")
+            if isinstance(
+                e, requests.exceptions.HTTPError
+            ) and e.response.status_code == 504:
+                raise serializers.ValidationError(
+                    "Сервер Кинопоиска не отвечает. Попробуйте позже."
+                )
+            else:
+                raise serializers.ValidationError(
+                    "Ошибка при запросе к Кинопоиску."
+                )
         kinopoisk_movies = kinopoisk_movies_response['docs']
         logger.debug(
             f"Movies from Kinopoisk (first 3): {kinopoisk_movies[:3]}"

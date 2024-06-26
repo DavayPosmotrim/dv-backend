@@ -1,5 +1,7 @@
-from api.serializers import (CustomSessionCreateSerializer,
-                             CustomUserSerializer, MovieDetailSerializer,
+from api.serializers import (CollectionSerializer,
+                             CustomSessionCreateSerializer,
+                             CustomUserSerializer, GenreSerializer,
+                             MovieDetailSerializer, MovieRouletteSerializer,
                              MovieSerializer)
 from drf_spectacular.utils import (OpenApiParameter, OpenApiResponse,
                                    extend_schema)
@@ -104,4 +106,46 @@ session_schema = {
             400: OpenApiResponse(description='Bad Request'),
         }
     ),
+}
+
+genres_schema = {
+    'get': extend_schema(
+        summary='Получение списка жанров',
+        description=(
+            'Возвращает список всех жанров'
+        ),
+        methods=['GET'],
+        responses={
+            200: GenreSerializer(many=True),
+            400: OpenApiResponse(description='Bad Request'),
+        }
+    )
+}
+
+collections_schema = {
+    'get': extend_schema(
+        summary='Получение списка подборок',
+        description=(
+            'Возвращает список всех подборок с Кинопоиска'
+        ),
+        methods=['GET'],
+        responses={
+            200: CollectionSerializer(many=True),
+            400: OpenApiResponse(description='Bad Request'),
+        }
+    )
+}
+
+roulette_schema = {
+    'get': extend_schema(
+        summary='Рулетка',
+        description=(
+            'Возвращает случайный фильм из мэтчей'
+        ),
+        methods=['GET'],
+        responses={
+            200: MovieRouletteSerializer(many=True),
+            400: OpenApiResponse(description='Bad Request'),
+        }
+    )
 }
