@@ -1,5 +1,7 @@
 from django.db import models
-from services.constants import MAX_MOVIE_NAME_LENGTH
+from django.contrib.postgres.fields import ArrayField
+
+from services.constants import MAX_MOVIE_NAME_LENGTH, MAX_NAME_LENGTH
 
 
 class Genre(models.Model):
@@ -72,8 +74,8 @@ class Movie(models.Model):
         null=True,
         blank=True
     )
-    countries = models.CharField(
-        max_length=255,
+    countries = ArrayField(
+        models.CharField(max_length=MAX_NAME_LENGTH),
         verbose_name="Страны",
         null=True,
         blank=True
@@ -109,10 +111,19 @@ class Movie(models.Model):
         null=True,
         blank=True
     )
-    persons = models.JSONField(
-        verbose_name="Персоны",
+    actors = ArrayField(
+        models.CharField(max_length=MAX_NAME_LENGTH),
+        verbose_name="Актеры",
         null=True,
-        blank=True
+        blank=True,
+        size=4
+    )
+    directors = ArrayField(
+        models.CharField(max_length=MAX_NAME_LENGTH),
+        verbose_name="Режиссеры",
+        null=True,
+        blank=True,
+        size=4
     )
 
     class Meta:

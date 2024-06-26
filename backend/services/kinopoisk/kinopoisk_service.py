@@ -51,7 +51,7 @@ class KinopoiskMovies(KinopoiskService):
     def get_movies(
         self,
         page: int = 1,
-        limit: int = 10,
+        limit: int = 25,
         sort_by_rating: bool = True,
     ):
         """
@@ -134,11 +134,17 @@ class KinopoiskMovieInfo(KinopoiskService):
         for movie in movies:
             movie['actors'] = []
             movie['directors'] = []
+            actor_count = 0
+            director_count = 0
             for person in movie['persons']:
-                if person['enProfession'] == 'actor':
-                    movie['actors'].append(person)
-                elif person['enProfession'] == 'director':
-                    movie['directors'].append(person)
+                if person['enProfession'] == 'actor' and actor_count < 4:
+                    movie['actors'].append(person['name'])
+                    actor_count += 1
+                elif person[
+                    'enProfession'
+                ] == 'director' and director_count < 4:
+                    movie['directors'].append(person['name'])
+                    director_count += 1
             del movie['persons']
 
     def get_movie(self, movie_id: int):
