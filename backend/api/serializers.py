@@ -1,5 +1,6 @@
 import logging
 
+import requests.exceptions
 from custom_sessions.models import CustomSession
 from movies.models import Collection, Genre, Movie
 from rest_framework import serializers
@@ -18,7 +19,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
         model = User
         fields = ('name', 'device_id')
         extra_kwargs = {
-            'device_id': {'write_only': True},  # Hide device_id from responses
+            'device_id': {'read_only': True},
         }
 
     def validate(self, data):
@@ -96,14 +97,35 @@ class MovieDetailSerializer(serializers.ModelSerializer):
         ]
 
 
+class MovieRouletteSerializer(serializers.ModelSerializer):
+    """Сериализатор представления фильма для рулетки."""
+
+    genres = GenreSerializer(many=True)
+
+    class Meta:
+        model = Movie
+        fields = [
+            'name',
+            'year',
+            'countries',
+            'poster',
+            'alternative_name',
+            'rating_kp',
+            'movie_length',
+            'genres'
+        ]
+
+
 class CustomSessionCreateSerializer(serializers.ModelSerializer):
     """Сериализатор для создания сессии."""
 
     genres = serializers.ListField(
-        child=serializers.CharField(), required=False
+        child=serializers.CharField(), required=False,
+        write_only=True
     )
     collections = serializers.ListField(
-        child=serializers.CharField(), required=False
+        child=serializers.CharField(), required=False,
+        write_only=True
     )
     movies = serializers.PrimaryKeyRelatedField(
         many=True, required=False,
@@ -113,6 +135,7 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
         many=True, required=False, allow_empty=True,
         read_only=True
     )
+    users = CustomUserSerializer(many=True, required=False, read_only=True)
 
     class Meta:
         model = CustomSession
@@ -137,6 +160,19 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
+        request = self.context.get('request')
+        device_id = request.headers.get('Device-Id')
+        if not device_id:
+            raise serializers.ValidationError(
+                {"message": "Требуется device_id"}
+            )
+
+        try:
+            user = User.objects.get(device_id=device_id)
+        except User.DoesNotExist:
+            raise serializers.ValidationError(
+                {"message": "Пользователь с указанным Device-Id не найден"}
+            )
         genres = validated_data.pop('genres', [])
         collections = validated_data.pop('collections', [])
         logger.debug(f"Genres from request: {genres}")
@@ -145,16 +181,29 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
             genres=genres,
             collections=collections
         )
-        kinopoisk_movies_response = kinopoisk_service.get_movies()
-        logger.debug(f"Фильмы с кинопоиска-1: {kinopoisk_movies_response}")
-        if kinopoisk_movies_response is None:
-            raise serializers.ValidationError(
-                "Данные о фильмах отсутствуют."
-            )
-        elif 'docs' not in kinopoisk_movies_response:
-            raise serializers.ValidationError(
-                "Данные о фильмах имеют неверный формат."
-            )
+        try:
+            kinopoisk_movies_response = kinopoisk_service.get_movies()
+            logger.debug(f"Фильмы с кинопоиска-1: {kinopoisk_movies_response}")
+            if kinopoisk_movies_response is None:
+                raise serializers.ValidationError(
+                    "Данные о фильмах отсутствуют."
+                )
+            elif 'docs' not in kinopoisk_movies_response:
+                raise serializers.ValidationError(
+                    "Данные о фильмах имеют неверный формат."
+                )
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Ошибка при запросе к Кинопоиску: {e}")
+            if isinstance(
+                e, requests.exceptions.HTTPError
+            ) and e.response.status_code == 504:
+                raise serializers.ValidationError(
+                    "Сервер Кинопоиска не отвечает. Попробуйте позже."
+                )
+            else:
+                raise serializers.ValidationError(
+                    "Ошибка при запросе к Кинопоиску."
+                )
         kinopoisk_movies = kinopoisk_movies_response['docs']
         logger.debug(
             f"Movies from Kinopoisk (first 3): {kinopoisk_movies[:3]}"
@@ -219,7 +268,8 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
         session = CustomSession.objects.create(
             **validated_data
         )
-        # Добавление данные о всех фильмах в создаваемую сессию
+        # Добавление данных о всех фильмах в создаваемую сессию
+        session.users.add(user)
         session.movies.set(all_movie_ids)
         return session
 
