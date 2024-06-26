@@ -39,11 +39,11 @@ class KinopoiskService:
             try:
                 return response.json()
             except ValueError as e:
-                # Логирование ошибки и возврат пустого результата или исключения
+                # Логирование ошибки, возврат пустого результата или исключения
                 print(f"JSON decode error: {e}")
                 return None
         except requests.exceptions.RequestException as e:
-            # Логирование сетевых ошибок и возврат пустого результата или исключения
+            # Логирование сетевых ошибок, возврат пустого результата или искл-я
             print(f"Request error: {e}")
             return None
 
