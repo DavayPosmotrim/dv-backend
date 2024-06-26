@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 from services.kinopoisk.kinopoisk_service import (KinopoiskCollections,
                                                   KinopoiskGenres)
 from services.schemas import (collections_schema, genres_schema,
-                              roulette_schema, match_list_schema,
+                              match_list_schema, roulette_schema,
                               session_schema, user_schema)
 from users.models import User
 

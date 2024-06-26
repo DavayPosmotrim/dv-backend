@@ -1,6 +1,6 @@
 import logging
-import requests.exceptions
 
+import requests.exceptions
 from custom_sessions.models import CustomSession
 from movies.models import Collection, Genre, Movie
 from rest_framework import serializers
