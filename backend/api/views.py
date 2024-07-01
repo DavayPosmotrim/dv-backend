@@ -9,6 +9,7 @@ from rest_framework.views import APIView
 from services.kinopoisk.kinopoisk_service import (KinopoiskCollections,
                                                   KinopoiskGenres)
 from services.schemas import (collections_schema, genres_schema,
+                              movie_schema,
                               match_list_schema, roulette_schema,
                               session_schema, user_schema)
 from users.models import User
@@ -162,3 +163,14 @@ class MovieViewSet(viewsets.ReadOnlyModelViewSet):
         if self.action == 'retrieve':
             return MovieDetailSerializer
         return super().get_serializer_class()
+
+    @movie_schema['get']
+    def retrieve(self, request, *args, **kwargs):
+        try:
+            movie_id = int(kwargs.get('pk'))  # Преобразуем строку в число
+            queryset = self.get_queryset()
+            movie = get_object_or_404(queryset, id=movie_id)
+            serializer = self.get_serializer(movie)
+            return Response(serializer.data)
+        except ValueError:
+            return Response({"error": "Некорректный movie ID"}, status=400)

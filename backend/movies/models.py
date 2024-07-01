@@ -26,7 +26,8 @@ class Collection(models.Model):
     )
     slug = models.SlugField(
         unique=True,
-        null=True
+        null=False,
+        blank=False
     )
     cover = models.ImageField(
         "Ссылка на изображение",

@@ -52,7 +52,7 @@ user_schema = {
 
 match_list_schema = {
     'get': extend_schema(
-        summary='Получение списка избранных фильмов',
+        summary='Мэтчи в сесиии',
         description=(
             'Возвращает список фильмов, '
             'которые пользователи отметили как совпадения'
@@ -62,24 +62,6 @@ match_list_schema = {
             200: MovieSerializer(many=True),
             404: OpenApiResponse(
                 description='Совпадений не нашлось, добавтье больше фильмов'),
-        }
-    )
-}
-
-movie_detail_schema = {
-    'get': extend_schema(
-        summary='Получение подробной информации о фильме',
-        description=(
-            'Возвращает объект фильма '
-            'содержит данные: уникальный номер, название, описание,'
-            'постер, год, страны, оригинальное название, рейтинг, длительность'
-            'жанры, персоны (актеры, режиссеры)'
-        ),
-        methods=['GET'],
-        responses={
-            200: MovieDetailSerializer,
-            404: OpenApiResponse(
-                description='Фильм отсутствует в базе данных'),
         }
     )
 }
@@ -147,5 +129,27 @@ roulette_schema = {
             200: MovieRouletteSerializer(many=True),
             400: OpenApiResponse(description='Bad Request'),
         }
+    )
+}
+
+movie_schema = {
+    'get': extend_schema(
+        summary='Подробнее о фильме',
+        description=(
+            'Возвращает детали конкретного фильма'
+        ),
+        methods=['GET'],
+        responses={
+            200: MovieDetailSerializer(many=True),
+            400: OpenApiResponse(description='Bad Request'),
+        },
+        parameters=[
+            OpenApiParameter(
+                name='id',
+                type=int,
+                location=OpenApiParameter.PATH,
+                description='ID фильма'
+            )
+        ]
     )
 }
