@@ -93,7 +93,8 @@ class MovieDetailSerializer(serializers.ModelSerializer):
             'votes_imdb',
             'movie_length',
             'genres',
-            'persons',
+            'directors',
+            'actors',
         ]
 
 
@@ -232,18 +233,11 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
                 )
                 poster_data = detailed_movie_data.get('poster', {})
                 countries_list = detailed_movie_data.get('countries', [])
-                countries = ', '.join(
-                    [country['name'] for country in countries_list]
-                )
+                countries = [country['name'] for country in countries_list]
                 rating_data = detailed_movie_data.get('rating', {})
                 votes_data = detailed_movie_data.get('votes', {})
-                persons_list = detailed_movie_data.get('persons', [])
-                persons = [
-                    {
-                        'name': person['name'],
-                        'enProfession': person['enProfession']
-                    } for person in persons_list
-                ]
+                actors = detailed_movie_data.get('actors', []),
+                directors = detailed_movie_data.get('directors', []),
                 movie_obj.name = movie_data.get('name', '')
                 movie_obj.poster = poster_data.get('url', '')
                 movie_obj.description = detailed_movie_data.get(
@@ -261,7 +255,8 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
                 movie_obj.movie_length = detailed_movie_data.get(
                     'movieLength', None
                 )
-                movie_obj.persons = persons
+                movie_obj.actors = actors
+                movie_obj.directors = directors
                 movie_obj.genres.set(genre_objects)
                 movie_obj.save()
             all_movie_ids.append(movie_obj.id)
