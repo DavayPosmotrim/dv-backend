@@ -51,7 +51,7 @@ class KinopoiskMovies(KinopoiskService):
     def get_movies(
         self,
         page: int = 1,
-        limit: int = 250,
+        limit: int = 25,
         sort_by_rating: bool = True,
     ):
         """
@@ -65,7 +65,7 @@ class KinopoiskMovies(KinopoiskService):
 
         search_by = 'lists'
         pattern = self.collections
-        movie, cartoon, anime = 'movie', 'cartoon', 'anime'
+        movie, cartoon, anime = ['movie', 'cartoon', 'anime']
         if self.genres:
             search_by = 'genres.name'
             pattern = list(map(lambda s: s.lower(), self.genres))
@@ -80,7 +80,9 @@ class KinopoiskMovies(KinopoiskService):
                 'page': page,
                 'limit': limit,
                 'notNullFields': ('id', 'name'),
-                'type': [movie, cartoon, anime],
+                'type': [
+                    movie, cartoon, anime, '!animated-series', '!tv-series'
+                ],
             }
             if sort_by_rating:
                 params['sortField'] = 'rating.kp'
@@ -132,11 +134,17 @@ class KinopoiskMovieInfo(KinopoiskService):
         for movie in movies:
             movie['actors'] = []
             movie['directors'] = []
+            actor_count = 0
+            director_count = 0
             for person in movie['persons']:
-                if person['enProfession'] == 'actor':
-                    movie['actors'].append(person)
-                elif person['enProfession'] == 'director':
-                    movie['directors'].append(person)
+                if person['enProfession'] == 'actor' and actor_count < 4:
+                    movie['actors'].append(person['name'])
+                    actor_count += 1
+                elif person[
+                    'enProfession'
+                ] == 'director' and director_count < 4:
+                    movie['directors'].append(person['name'])
+                    director_count += 1
             del movie['persons']
 
     def get_movie(self, movie_id: int):
@@ -154,6 +162,7 @@ class KinopoiskMovieInfo(KinopoiskService):
             'poster',
             'alternativeName',
             'rating',
+            'votes',
             'movieLength',
             'genres',
             'persons',
