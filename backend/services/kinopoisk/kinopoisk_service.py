@@ -18,10 +18,10 @@ class KinopoiskService:
         movies_url (str): Полный URL для получения фильмов.
     """
 
-    BASE_URL = os.getenv('KINOPOISK_API_URL')
-    headers = {'X-API-KEY': os.getenv('KINOPOISK_API_KEY')}
-    collections_url = urljoin(BASE_URL, 'list')
-    movies_url = urljoin(BASE_URL, 'movie')
+    BASE_URL = os.getenv("KINOPOISK_API_URL")
+    headers = {"X-API-KEY": os.getenv("KINOPOISK_API_KEY")}
+    collections_url = urljoin(BASE_URL, "list")
+    movies_url = urljoin(BASE_URL, "movie")
 
     def _perform_get_request(
         self, url, params: dict[str, str | int | list] = None
@@ -63,34 +63,32 @@ class KinopoiskMovies(KinopoiskService):
         :param sort_by_rating: Сортировка по рейтингу от большего к меньшему.
         """
 
-        search_by = 'lists'
+        search_by = "lists"
         pattern = self.collections
-        movie, cartoon, anime = ['movie', 'cartoon', 'anime']
+        movie, cartoon, anime = ["movie", "cartoon", "anime"]
         if self.genres:
-            search_by = 'genres.name'
+            search_by = "genres.name"
             pattern = list(map(lambda s: s.lower(), self.genres))
-            if 'аниме' not in pattern:
-                anime = '!anime'
-            if 'мультфильм' not in pattern:
-                cartoon = '!cartoon'
+            if "аниме" not in pattern:
+                anime = "!anime"
+            if "мультфильм" not in pattern:
+                cartoon = "!cartoon"
         if pattern:
             params = {
                 search_by: pattern,
-                'selectFields': ('id', 'name'),
-                'page': page,
-                'limit': limit,
-                'notNullFields': ('id', 'name'),
-                'type': [
-                    movie, cartoon, anime, '!animated-series', '!tv-series'
-                ],
+                "selectFields": ("id", "name"),
+                "page": page,
+                "limit": limit,
+                "notNullFields": ("id", "name"),
+                "type": [movie, cartoon, anime, "!animated-series", "!tv-series"],
             }
             if sort_by_rating:
-                params['sortField'] = 'rating.kp'
-                params['sortType'] = '-1'
+                params["sortField"] = "rating.kp"
+                params["sortType"] = "-1"
 
             return self._perform_get_request(self.movies_url, params)
 
-        raise ValueError('You should pass either genres or collections')
+        raise ValueError("You should pass either genres or collections")
 
 
 class KinopoiskCollections(KinopoiskService):
@@ -100,7 +98,7 @@ class KinopoiskCollections(KinopoiskService):
         """Получает список подборок, исключая подборки с сериалами."""
 
         return self._perform_get_request(
-            self.collections_url, {'limit': 250, 'category': '!Сериалы'}
+            self.collections_url, {"limit": 250, "category": "!Сериалы"}
         )
 
 
@@ -113,10 +111,8 @@ class KinopoiskGenres(KinopoiskService):
         Использует специфическую версию API (v1).
         """
 
-        url = f'{self.movies_url}/possible-values-by-field'.replace(
-            'v1.4', 'v1'
-        )
-        return self._perform_get_request(url, {'field': 'genres.name'})
+        url = f"{self.movies_url}/possible-values-by-field".replace("v1.4", "v1")
+        return self._perform_get_request(url, {"field": "genres.name"})
 
 
 class KinopoiskMovieInfo(KinopoiskService):
@@ -132,20 +128,18 @@ class KinopoiskMovieInfo(KinopoiskService):
         """
 
         for movie in movies:
-            movie['actors'] = []
-            movie['directors'] = []
+            movie["actors"] = []
+            movie["directors"] = []
             actor_count = 0
             director_count = 0
-            for person in movie['persons']:
-                if person['enProfession'] == 'actor' and actor_count < 4:
-                    movie['actors'].append(person['name'])
+            for person in movie["persons"]:
+                if person["enProfession"] == "actor" and actor_count < 4:
+                    movie["actors"].append(person["name"])
                     actor_count += 1
-                elif person[
-                    'enProfession'
-                ] == 'director' and director_count < 4:
-                    movie['directors'].append(person['name'])
+                elif person["enProfession"] == "director" and director_count < 4:
+                    movie["directors"].append(person["name"])
                     director_count += 1
-            del movie['persons']
+            del movie["persons"]
 
     def get_movie(self, movie_id: int):
         """
@@ -154,20 +148,20 @@ class KinopoiskMovieInfo(KinopoiskService):
         """
 
         fields = (
-            'id',
-            'name',
-            'description',
-            'year',
-            'countries',
-            'poster',
-            'alternativeName',
-            'rating',
-            'votes',
-            'movieLength',
-            'genres',
-            'persons',
+            "id",
+            "name",
+            "description",
+            "year",
+            "countries",
+            "poster",
+            "alternativeName",
+            "rating",
+            "votes",
+            "movieLength",
+            "genres",
+            "persons",
         )
-        params = {'selectFields': fields, 'id': movie_id}
+        params = {"selectFields": fields, "id": movie_id}
         response = self._perform_get_request(self.movies_url, params)
-        self._extract_persons(response['docs'])
-        return response['docs'][0]
+        self._extract_persons(response["docs"])
+        return response["docs"][0]

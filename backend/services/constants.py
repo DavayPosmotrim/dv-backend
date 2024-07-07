@@ -7,7 +7,7 @@ MAX_PERSON_NAME_LENGTH = 50
 MAX_NAME_LENGTH = 100
 
 STATUS_CHOICES = [
-    ('waiting', 'Ожидание'),
-    ('voting', 'Голосование'),
-    ('closed', 'Закрыто'),
+    ("waiting", "Ожидание"),
+    ("voting", "Голосование"),
+    ("closed", "Закрыто"),
 ]
