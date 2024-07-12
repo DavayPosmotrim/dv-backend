@@ -291,4 +291,31 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
         data['movies'] = MovieDetailSerializer(
             instance.movies, many=True
         ).data
+        data['matched_movies'] = MovieSerializer(
+            instance.matched_movies, many=True
+        ).data
         return data
+
+
+class CustomSessionUpdateSerializer(serializers.ModelSerializer):
+    """Сериализатор для обновления сессии."""
+
+    movies = serializers.PrimaryKeyRelatedField(
+        many=True, queryset=Movie.objects.all(), required=False
+    )
+    matched_movies = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=Movie.objects.none(),
+        required=False,
+        allow_empty=True
+    )
+    users = CustomUserSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = CustomSession
+        fields = ['id', 'users', 'movies', 'matched_movies', 'date', 'status']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance:
+            self.fields['matched_movies'].queryset = self.instance.movies.all()

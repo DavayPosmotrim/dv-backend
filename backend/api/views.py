@@ -15,6 +15,7 @@ from services.schemas import (collections_schema, genres_schema,
 from users.models import User
 
 from .serializers import (CollectionSerializer, CustomSessionCreateSerializer,
+                          CustomSessionUpdateSerializer,
                           CustomUserSerializer, GenreSerializer,
                           MovieDetailSerializer, MovieRouletteSerializer,
                           MovieSerializer)
@@ -108,12 +109,20 @@ class CollectionListView(APIView):
 class CustomSessionViewSet(viewsets.ModelViewSet):
     """Представление сессий ."""
 
-    serializer_class = CustomSessionCreateSerializer
     queryset = CustomSession.objects.all()
+
+    def get_serializer_class(self):
+        if self.action in ['update']:
+            return CustomSessionUpdateSerializer
+        return CustomSessionCreateSerializer
 
     @session_schema['create']
     def create(self, request, *args, **kwargs):
         return super().create(request, *args, **kwargs)
+
+    @session_schema['update']
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
 
     @match_list_schema['get']
     @action(detail=True, methods=['get'])

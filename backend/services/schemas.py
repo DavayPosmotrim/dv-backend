@@ -1,5 +1,6 @@
 from api.serializers import (CollectionSerializer,
                              CustomSessionCreateSerializer,
+                             CustomSessionUpdateSerializer,
                              CustomUserSerializer, GenreSerializer,
                              MovieDetailSerializer, MovieRouletteSerializer,
                              MovieSerializer)
@@ -88,7 +89,20 @@ session_schema = {
             400: OpenApiResponse(description='Bad Request'),
         }
     ),
+    'update': extend_schema(
+        summary='Обновление сессии',
+        description='Обновляет данные существующей сессии',
+        methods=['PATCH'],
+        parameters=[device_id_header],
+        request=CustomSessionUpdateSerializer,
+        responses={
+            200: CustomSessionUpdateSerializer,
+            400: OpenApiResponse(description='Bad Request'),
+            404: OpenApiResponse(description='Not Found'),
+        }
+    ),
 }
+
 
 genres_schema = {
     'get': extend_schema(
