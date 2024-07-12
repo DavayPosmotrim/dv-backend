@@ -9,16 +9,14 @@ from rest_framework.views import APIView
 from services.kinopoisk.kinopoisk_service import (KinopoiskCollections,
                                                   KinopoiskGenres)
 from services.schemas import (collections_schema, genres_schema,
-                              movie_schema,
-                              match_list_schema, roulette_schema,
+                              match_list_schema, movie_schema, roulette_schema,
                               session_schema, user_schema)
 from users.models import User
 
 from .serializers import (CollectionSerializer, CustomSessionCreateSerializer,
-                          CustomSessionUpdateSerializer,
-                          CustomUserSerializer, GenreSerializer,
-                          MovieDetailSerializer, MovieRouletteSerializer,
-                          MovieSerializer)
+                          CustomSessionUpdateSerializer, CustomUserSerializer,
+                          GenreSerializer, MovieDetailSerializer,
+                          MovieRouletteSerializer, MovieSerializer)
 
 
 class CreateUpdateUserView(APIView):
