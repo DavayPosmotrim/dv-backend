@@ -4,7 +4,8 @@ import requests.exceptions
 from custom_sessions.models import CustomSession
 from movies.models import Collection, Genre, Movie
 from rest_framework import serializers
-from services.kinopoisk.kinopoisk_service import KinopoiskMovieInfo, KinopoiskMovies
+from services.kinopoisk.kinopoisk_service import (KinopoiskMovieInfo,
+                                                  KinopoiskMovies)
 from services.validators import validate_name
 from users.models import User
 
@@ -38,7 +39,10 @@ class CollectionSerializer(serializers.ModelSerializer):
         fields = ["name", "slug", "cover"]
 
     def get_cover(self, obj):
-        return obj["cover"]["url"] if "cover" in obj and "url" in obj["cover"] else None
+        if "cover" in obj and "url" in obj["cover"]:
+            return obj["cover"]["url"]
+        else:
+            return None
 
 
 class GenreSerializer(serializers.ModelSerializer):
@@ -147,7 +151,9 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         device_id = request.headers.get("Device-Id")
         if not device_id:
-            raise serializers.ValidationError({"message": "Требуется device_id"})
+            raise serializers.ValidationError(
+                {"message": "Требуется device_id"}
+            )
 
         try:
             user = User.objects.get(device_id=device_id)
@@ -159,12 +165,17 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
         collections = validated_data.pop("collections", [])
         logger.debug(f"Genres from request: {genres}")
         logger.debug(f"Collections from request: {collections}")
-        kinopoisk_service = KinopoiskMovies(genres=genres, collections=collections)
+        kinopoisk_service = KinopoiskMovies(
+            genres=genres,
+            collections=collections
+        )
         try:
             kinopoisk_movies_response = kinopoisk_service.get_movies()
             logger.debug(f"Фильмы с кинопоиска-1: {kinopoisk_movies_response}")
             if kinopoisk_movies_response is None:
-                raise serializers.ValidationError("Данные о фильмах отсутствуют.")
+                raise serializers.ValidationError(
+                    "Данные о фильмах отсутствуют."
+                )
             elif "docs" not in kinopoisk_movies_response:
                 raise serializers.ValidationError(
                     "Данные о фильмах имеют неверный формат."
@@ -179,9 +190,13 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
                     "Сервер Кинопоиска не отвечает. Попробуйте позже."
                 )
             else:
-                raise serializers.ValidationError("Ошибка при запросе к Кинопоиску.")
+                raise serializers.ValidationError(
+                    "Ошибка при запросе к Кинопоиску."
+                )
         kinopoisk_movies = kinopoisk_movies_response["docs"]
-        logger.debug(f"Movies from Kinopoisk (first 3): {kinopoisk_movies[:3]}")
+        logger.debug(
+            f"Movies from Kinopoisk (first 3): {kinopoisk_movies[:3]}"
+        )
 
         all_movie_ids = []
         for movie_data in kinopoisk_movies:
@@ -201,7 +216,9 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
                             name=genre_name
                         )
                         genre_objects.append(genre_obj)
-                logger.debug(f"Genres for movie {movie_data['id']}: {genre_objects}")
+                logger.debug(
+                    f"Genres for movie {movie_data['id']}: {genre_objects}"
+                )
                 poster_data = detailed_movie_data.get("poster", {})
                 countries_list = detailed_movie_data.get("countries", [])
                 countries = [country["name"] for country in countries_list]
@@ -211,7 +228,8 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
                 directors = (detailed_movie_data.get("directors", []),)
                 movie_obj.name = movie_data.get("name", "")
                 movie_obj.poster = poster_data.get("url", "")
-                movie_obj.description = detailed_movie_data.get("description", "")
+                movie_obj.description = detailed_movie_data.get("description",
+                                                                "")
                 movie_obj.year = detailed_movie_data.get("year", None)
                 movie_obj.countries = countries
                 movie_obj.alternative_name = detailed_movie_data.get(
@@ -221,7 +239,8 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
                 movie_obj.rating_imdb = rating_data.get("imdb", None)
                 movie_obj.votes_kp = votes_data.get("kp", None)
                 movie_obj.votes_imdb = votes_data.get("imdb", None)
-                movie_obj.movie_length = detailed_movie_data.get("movieLength", None)
+                movie_obj.movie_length = detailed_movie_data.get("movieLength",
+                                                                 None)
                 movie_obj.actors = actors
                 movie_obj.directors = directors
                 movie_obj.genres.set(genre_objects)
@@ -238,7 +257,9 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
         детальной информации о фильме."""
         kinopoisk_movie_info_service = KinopoiskMovieInfo()
         try:
-            detailed_movie_data = kinopoisk_movie_info_service.get_movie(movie_id)
+            detailed_movie_data = kinopoisk_movie_info_service.get_movie(
+                movie_id
+            )
         except KeyError as e:
             logger.error(f"KeyError: {e} for movie_id: {movie_id}")
             return {}

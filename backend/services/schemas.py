@@ -1,13 +1,10 @@
-from api.serializers import (
-    CollectionSerializer,
-    CustomSessionCreateSerializer,
-    CustomUserSerializer,
-    GenreSerializer,
-    MovieDetailSerializer,
-    MovieRouletteSerializer,
-    MovieSerializer,
-)
-from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
+from api.serializers import (CollectionSerializer,
+                             CustomSessionCreateSerializer,
+                             CustomUserSerializer, GenreSerializer,
+                             MovieDetailSerializer, MovieRouletteSerializer,
+                             MovieSerializer)
+from drf_spectacular.utils import (OpenApiParameter, OpenApiResponse,
+                                   extend_schema)
 
 device_id_header = OpenApiParameter(
     name="Device-Id",
@@ -57,7 +54,8 @@ match_list_schema = {
     "get": extend_schema(
         summary="Мэтчи в сесиии",
         description=(
-            "Возвращает список фильмов, " "которые пользователи отметили как совпадения"
+            "Возвращает список фильмов, "
+            "которые пользователи отметили как совпадения"
         ),
         methods=["GET"],
         responses={

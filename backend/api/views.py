@@ -6,27 +6,17 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from services.kinopoisk.kinopoisk_service import KinopoiskCollections, KinopoiskGenres
-from services.schemas import (
-    collections_schema,
-    genres_schema,
-    match_list_schema,
-    movie_schema,
-    roulette_schema,
-    session_schema,
-    user_schema,
-)
+from services.kinopoisk.kinopoisk_service import (KinopoiskCollections,
+                                                  KinopoiskGenres)
+from services.schemas import (collections_schema, genres_schema,
+                              match_list_schema, movie_schema, roulette_schema,
+                              session_schema, user_schema)
+from services.utils import send_websocket_message
 from users.models import User
 
-from .serializers import (
-    CollectionSerializer,
-    CustomSessionCreateSerializer,
-    CustomUserSerializer,
-    GenreSerializer,
-    MovieDetailSerializer,
-    MovieRouletteSerializer,
-    MovieSerializer,
-)
+from .serializers import (CollectionSerializer, CustomSessionCreateSerializer,
+                          CustomUserSerializer, GenreSerializer,
+                          MovieDetailSerializer, MovieSerializer)
 
 
 class CreateUpdateUserView(APIView):
@@ -53,12 +43,19 @@ class CreateUpdateUserView(APIView):
         print(request.headers)
         if device_id:
             serializer = CustomUserSerializer(
-                data=request.data, context={"device_id": device_id}
+                data=request.data,
+                context={"device_id": device_id}
             )
             if serializer.is_valid():
                 serializer.save()
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    serializer.data,
+                    status=status.HTTP_201_CREATED
+                )
+            return Response(
+                serializer.errors,
+                status=status.HTTP_400_BAD_REQUEST
+            )
         return Response(
             {"error_message": "Device-Id не был передан."},
             status=status.HTTP_400_BAD_REQUEST,
@@ -73,7 +70,10 @@ class CreateUpdateUserView(APIView):
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                serializer.errors,
+                status=status.HTTP_400_BAD_REQUEST
+            )
         return Response(
             {"error_message": "Device-Id не был передан."},
             status=status.HTTP_400_BAD_REQUEST,
@@ -136,19 +136,23 @@ class CustomSessionViewSet(viewsets.ModelViewSet):
             return Response({"message": "Нет ни одного совпадения"})
 
     @roulette_schema["get"]
-    @action(detail=False, methods=["get"])
-    def get_roulette(self):
+    @action(detail=True, methods=["get"])
+    def get_roulette(self, request, pk=None):
         """Возвращает рандомный фильм
         если в списке совпадений более 2 фильмов или ошибку."""
-        matched_movies = self.get_matched_movies()
+        session = get_object_or_404(CustomSession, pk=pk)
+        matched_movies = session.matched_movies
         if matched_movies.count() > 2:
+            send_websocket_message(pk, "session_status", "roullete")
             random_movie = choice(matched_movies)
-            serializer = MovieRouletteSerializer(random_movie)
-            return Response(serializer.data)
-        return Response(
-            {"error_message": ("В списке совпадений " "должно быть более 2 фильмов.")},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
+            random_movie_id = random_movie.id
+            send_websocket_message(pk, "roulette", random_movie_id)
+        else:
+            error_message = "В списке совпадений должно быть более 2 фильмов."
+            return Response(
+                {"error_message": error_message},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
 
 class MovieViewSet(viewsets.ReadOnlyModelViewSet):

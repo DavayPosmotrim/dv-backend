@@ -1,5 +1,8 @@
 """Служебные функции . """
 
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+
 
 def format_date(date):
     # возвращает дату сеанса в отформатированном виде
@@ -22,3 +25,16 @@ def format_date(date):
     year = date.year
 
     return f"{day} {month} {year}"
+
+
+def send_websocket_message(session_id, endpoint, message):
+    """Send message to room_group_name on websocket."""
+    channel_layer = get_channel_layer()
+    room_group_name = "_".join(["chat", session_id, endpoint])
+    async_to_sync(channel_layer.group_send)(
+        room_group_name,
+        {
+            "type": "chat.message",
+            "message": message,
+        }
+    )

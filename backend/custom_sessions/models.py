@@ -52,7 +52,11 @@ class CustomSessionUser(models.Model):
     session = models.ForeignKey(
         CustomSession, related_name="users", on_delete=models.CASCADE
     )
-    user = models.ForeignKey(User, related_name="sessions", on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        User,
+        related_name="sessions",
+        on_delete=models.CASCADE
+    )
 
     class Meta:
         verbose_name = "CustomSessionUser"
