@@ -2,37 +2,55 @@ import random
 import string
 
 from django.db import models
+from movies.models import Movie
 from services.constants import STATUS_CHOICES
 from services.utils import format_date
 from users.models import User
 
 
 def generate_id():
-    return "".join(random.choices(string.ascii_letters + string.digits, k=8))
+    return ''.join(random.choices(string.ascii_letters + string.digits, k=8))
 
 
 class CustomSession(models.Model):
-    """Модель комнаты/сеанса."""
+    """Модель комнаты/сеанса. """
 
     id = models.CharField(
         primary_key=True,
         default=generate_id,
         max_length=8,
         editable=False,
-        verbose_name="Уникальный идентификатор сессии",
+        verbose_name="Уникальный идентификатор сессии"
+    )
+    users = models.ManyToManyField(
+        User,
+        verbose_name='Пользователь',
+    )
+    movies = models.ManyToManyField(
+        Movie,
+        blank=True,
+        verbose_name='Фильм',
     )
     date = models.DateField(
-        verbose_name="Дата",
-        auto_now_add=True,
+        verbose_name='Дата',
+        null=True,
+        blank=True
     )
     status = models.CharField(
         max_length=10,
         choices=STATUS_CHOICES,
-        default="draft",
+        default='draft',
+    )
+    matched_movies = models.ManyToManyField(
+        Movie,
+        blank=True,
+        related_name='matched_movies_custom_sessions',
+        verbose_name='Избранный фильм',
     )
 
     class Meta:
-
+        ordering = ("date",)
+        default_related_name = 'custom_sessions'
         verbose_name = "Сеанс"
         verbose_name_plural = "Сеансы"
 
@@ -43,21 +61,4 @@ class CustomSession(models.Model):
         if self.date:
             return format_date(self.date)
         else:
-            return "Дата не установлена"
-
-
-class CustomSessionUser(models.Model):
-    """Model describe users connected to the session."""
-
-    session = models.ForeignKey(
-        CustomSession, related_name="users", on_delete=models.CASCADE
-    )
-    user = models.ForeignKey(
-        User,
-        related_name="sessions",
-        on_delete=models.CASCADE
-    )
-
-    class Meta:
-        verbose_name = "CustomSessionUser"
-        verbose_name_plural = "CustomSessionUsers"
+            return 'Дата не установлена'

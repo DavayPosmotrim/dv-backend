@@ -1,4 +1,3 @@
-from custom_sessions.models import CustomSession
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from services.constants import MAX_MOVIE_NAME_LENGTH, MAX_NAME_LENGTH
@@ -25,12 +24,16 @@ class Collection(models.Model):
         "Название подборки",
         max_length=MAX_MOVIE_NAME_LENGTH,
     )
-    slug = models.SlugField(unique=True, null=False, blank=False)
+    slug = models.SlugField(
+        unique=True,
+        null=False,
+        blank=False
+    )
     cover = models.ImageField(
         "Ссылка на изображение",
         upload_to="collections/",
         null=True,
-        default=None,
+        default=None
     )
 
     class Meta:
@@ -48,11 +51,12 @@ class Movie(models.Model):
     )
     genres = models.ManyToManyField(
         Genre,
-        verbose_name="Жанр",
+        verbose_name='Жанр',
         blank=True
     )
     name = models.CharField(
-        max_length=MAX_MOVIE_NAME_LENGTH, verbose_name="Название фильма"
+        max_length=MAX_MOVIE_NAME_LENGTH,
+        verbose_name="Название фильма"
     )
     poster = models.ImageField(
         "Ссылка на изображение",
@@ -61,7 +65,9 @@ class Movie(models.Model):
         default=None,
     )
     description = models.TextField(
-        verbose_name="Описание фильма", null=True, blank=True
+        verbose_name="Описание фильма",
+        null=True,
+        blank=True
     )
     year = models.IntegerField(
         verbose_name="Год выпуска",
@@ -72,16 +78,18 @@ class Movie(models.Model):
         models.CharField(max_length=MAX_NAME_LENGTH),
         verbose_name="Страны",
         null=True,
-        blank=True,
+        blank=True
     )
     alternative_name = models.CharField(
         max_length=MAX_MOVIE_NAME_LENGTH,
         verbose_name="Альтернативное название",
         null=True,
-        blank=True,
+        blank=True
     )
     rating_kp = models.FloatField(
-        verbose_name="Рейтинг Кинопоиск", null=True, blank=True
+        verbose_name="Рейтинг Кинопоиск",
+        null=True,
+        blank=True
     )
     rating_imdb = models.FloatField(
         verbose_name="Рейтинг IMDb",
@@ -89,7 +97,9 @@ class Movie(models.Model):
         blank=True
     )
     votes_kp = models.IntegerField(
-        verbose_name="Голоса Кинопоиск", null=True, blank=True
+        verbose_name="Голоса Кинопоиск",
+        null=True,
+        blank=True
     )
     votes_imdb = models.IntegerField(
         verbose_name="Голоса IMDb",
@@ -97,43 +107,30 @@ class Movie(models.Model):
         blank=True
     )
     movie_length = models.IntegerField(
-        verbose_name="Продолжительность фильма (минуты)", null=True, blank=True
+        verbose_name="Продолжительность фильма (минуты)",
+        null=True,
+        blank=True
     )
     actors = ArrayField(
         models.CharField(max_length=MAX_NAME_LENGTH),
         verbose_name="Актеры",
         null=True,
         blank=True,
-        size=4,
+        size=4
     )
     directors = ArrayField(
         models.CharField(max_length=MAX_NAME_LENGTH),
         verbose_name="Режиссеры",
         null=True,
         blank=True,
-        size=4,
+        size=4
     )
 
     class Meta:
-        default_related_name = "movies"
+        default_related_name = 'movies'
         ordering = ("name",)
         verbose_name = "Фильм"
         verbose_name_plural = "Фильмы"
 
     def __str__(self):
         return self.name
-
-
-class SessionMatchedMovie(models.Model):
-    """
-    Model to connect session_id and matched movies in this session.
-    """
-
-    session_id = models.ForeignKey(
-        CustomSession, related_name="matched_movies", on_delete=models.CASCADE
-    )
-    movie_id = models.IntegerField(verbose_name="Уникальный код фильма")
-
-    class Meta:
-        verbose_name = "SessionMatchedMovie"
-        verbose_name_plural = "SessionMatchedMovies"
