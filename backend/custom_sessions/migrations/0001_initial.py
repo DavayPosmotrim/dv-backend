@@ -9,26 +9,65 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('movies', '0001_initial'),
-        ('users', '0001_initial'),
+        ("movies", "0001_initial"),
+        ("users", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='CustomSession',
+            name="CustomSession",
             fields=[
-                ('id', models.CharField(default=custom_sessions.models.generate_id, editable=False, max_length=8, primary_key=True, serialize=False, verbose_name='Уникальный идентификатор сессии')),
-                ('date', models.DateField(blank=True, null=True, verbose_name='Дата')),
-                ('status', models.CharField(choices=[('waiting', 'Ожидание'), ('voting', 'Голосование'), ('closed', 'Закрыто')], default='draft', max_length=10)),
-                ('matched_movies', models.ManyToManyField(blank=True, related_name='matched_movies_custom_sessions', to='movies.movie', verbose_name='Избранный фильм')),
-                ('movies', models.ManyToManyField(blank=True, to='movies.movie', verbose_name='Фильм')),
-                ('users', models.ManyToManyField(to='users.user', verbose_name='Пользователь')),
+                (
+                    "id",
+                    models.CharField(
+                        default=custom_sessions.models.generate_id,
+                        editable=False,
+                        max_length=8,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="Уникальный идентификатор сессии",
+                    ),
+                ),
+                ("date", models.DateField(blank=True, null=True, verbose_name="Дата")),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("waiting", "Ожидание"),
+                            ("voting", "Голосование"),
+                            ("closed", "Закрыто"),
+                        ],
+                        default="draft",
+                        max_length=10,
+                    ),
+                ),
+                (
+                    "matched_movies",
+                    models.ManyToManyField(
+                        blank=True,
+                        related_name="matched_movies_custom_sessions",
+                        to="movies.movie",
+                        verbose_name="Избранный фильм",
+                    ),
+                ),
+                (
+                    "movies",
+                    models.ManyToManyField(
+                        blank=True, to="movies.movie", verbose_name="Фильм"
+                    ),
+                ),
+                (
+                    "users",
+                    models.ManyToManyField(
+                        to="users.user", verbose_name="Пользователь"
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Сеанс',
-                'verbose_name_plural': 'Сеансы',
-                'ordering': ('date',),
-                'default_related_name': 'custom_sessions',
+                "verbose_name": "Сеанс",
+                "verbose_name_plural": "Сеансы",
+                "ordering": ("date",),
+                "default_related_name": "custom_sessions",
             },
         ),
     ]

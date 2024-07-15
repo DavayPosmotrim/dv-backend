@@ -7,32 +7,50 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('movies', '0001_initial'),
+        ("movies", "0001_initial"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='movie',
-            name='persons',
+            model_name="movie",
+            name="persons",
         ),
         migrations.AddField(
-            model_name='movie',
-            name='actors',
-            field=django.contrib.postgres.fields.ArrayField(base_field=models.CharField(max_length=100), blank=True, null=True, size=4, verbose_name='Актеры'),
+            model_name="movie",
+            name="actors",
+            field=django.contrib.postgres.fields.ArrayField(
+                base_field=models.CharField(max_length=100),
+                blank=True,
+                null=True,
+                size=4,
+                verbose_name="Актеры",
+            ),
         ),
         migrations.AddField(
-            model_name='movie',
-            name='directors',
-            field=django.contrib.postgres.fields.ArrayField(base_field=models.CharField(max_length=100), blank=True, null=True, size=4, verbose_name='Режиссеры'),
+            model_name="movie",
+            name="directors",
+            field=django.contrib.postgres.fields.ArrayField(
+                base_field=models.CharField(max_length=100),
+                blank=True,
+                null=True,
+                size=4,
+                verbose_name="Режиссеры",
+            ),
         ),
         migrations.AlterField(
-            model_name='collection',
-            name='slug',
+            model_name="collection",
+            name="slug",
             field=models.SlugField(unique=True),
         ),
         migrations.AlterField(
-            model_name='movie',
-            name='countries',
-            field=django.contrib.postgres.fields.ArrayField(base_field=models.CharField(max_length=100), blank=True, null=True, size=None, verbose_name='Страны'),
+            model_name="movie",
+            name="countries",
+            field=django.contrib.postgres.fields.ArrayField(
+                base_field=models.CharField(max_length=100),
+                blank=True,
+                null=True,
+                size=None,
+                verbose_name="Страны",
+            ),
         ),
     ]

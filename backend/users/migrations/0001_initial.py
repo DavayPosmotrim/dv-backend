@@ -8,15 +8,29 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='User',
+            name="User",
             fields=[
-                ('name', models.CharField(max_length=16, validators=[services.validators.validate_name], verbose_name='Имя')),
-                ('device_id', models.UUIDField(editable=False, primary_key=True, serialize=False, verbose_name='ID устройства')),
+                (
+                    "name",
+                    models.CharField(
+                        max_length=16,
+                        validators=[services.validators.validate_name],
+                        verbose_name="Имя",
+                    ),
+                ),
+                (
+                    "device_id",
+                    models.UUIDField(
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID устройства",
+                    ),
+                ),
             ],
         ),
     ]

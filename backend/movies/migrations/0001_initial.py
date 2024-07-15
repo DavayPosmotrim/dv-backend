@@ -7,59 +7,164 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Collection',
+            name="Collection",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=50, verbose_name='Название подборки')),
-                ('slug', models.SlugField(null=True, unique=True)),
-                ('cover', models.ImageField(default=None, null=True, upload_to='collections/', verbose_name='Ссылка на изображение')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "name",
+                    models.CharField(max_length=50, verbose_name="Название подборки"),
+                ),
+                ("slug", models.SlugField(null=True, unique=True)),
+                (
+                    "cover",
+                    models.ImageField(
+                        default=None,
+                        null=True,
+                        upload_to="collections/",
+                        verbose_name="Ссылка на изображение",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Подборка',
-                'verbose_name_plural': 'Подборка',
-                'ordering': ('name',),
+                "verbose_name": "Подборка",
+                "verbose_name_plural": "Подборка",
+                "ordering": ("name",),
             },
         ),
         migrations.CreateModel(
-            name='Genre',
+            name="Genre",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=50, verbose_name='Название жанра')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "name",
+                    models.CharField(max_length=50, verbose_name="Название жанра"),
+                ),
             ],
             options={
-                'verbose_name': 'Жанр',
-                'verbose_name_plural': 'Жанры',
-                'ordering': ('name',),
+                "verbose_name": "Жанр",
+                "verbose_name_plural": "Жанры",
+                "ordering": ("name",),
             },
         ),
         migrations.CreateModel(
-            name='Movie',
+            name="Movie",
             fields=[
-                ('id', models.IntegerField(primary_key=True, serialize=False, verbose_name='Уникальный код фильма')),
-                ('name', models.CharField(max_length=50, verbose_name='Название фильма')),
-                ('poster', models.ImageField(default=None, null=True, upload_to='movies/posters/', verbose_name='Ссылка на изображение')),
-                ('description', models.TextField(blank=True, null=True, verbose_name='Описание фильма')),
-                ('year', models.IntegerField(blank=True, null=True, verbose_name='Год выпуска')),
-                ('countries', models.CharField(blank=True, max_length=255, null=True, verbose_name='Страны')),
-                ('alternative_name', models.CharField(blank=True, max_length=50, null=True, verbose_name='Альтернативное название')),
-                ('rating_kp', models.FloatField(blank=True, null=True, verbose_name='Рейтинг Кинопоиск')),
-                ('rating_imdb', models.FloatField(blank=True, null=True, verbose_name='Рейтинг IMDb')),
-                ('votes_kp', models.IntegerField(blank=True, null=True, verbose_name='Голоса Кинопоиск')),
-                ('votes_imdb', models.IntegerField(blank=True, null=True, verbose_name='Голоса IMDb')),
-                ('movie_length', models.IntegerField(blank=True, null=True, verbose_name='Продолжительность фильма (минуты)')),
-                ('persons', models.JSONField(blank=True, null=True, verbose_name='Персоны')),
-                ('genres', models.ManyToManyField(blank=True, to='movies.genre', verbose_name='Жанр')),
+                (
+                    "id",
+                    models.IntegerField(
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="Уникальный код фильма",
+                    ),
+                ),
+                (
+                    "name",
+                    models.CharField(max_length=50, verbose_name="Название фильма"),
+                ),
+                (
+                    "poster",
+                    models.ImageField(
+                        default=None,
+                        null=True,
+                        upload_to="movies/posters/",
+                        verbose_name="Ссылка на изображение",
+                    ),
+                ),
+                (
+                    "description",
+                    models.TextField(
+                        blank=True, null=True, verbose_name="Описание фильма"
+                    ),
+                ),
+                (
+                    "year",
+                    models.IntegerField(
+                        blank=True, null=True, verbose_name="Год выпуска"
+                    ),
+                ),
+                (
+                    "countries",
+                    models.CharField(
+                        blank=True, max_length=255, null=True, verbose_name="Страны"
+                    ),
+                ),
+                (
+                    "alternative_name",
+                    models.CharField(
+                        blank=True,
+                        max_length=50,
+                        null=True,
+                        verbose_name="Альтернативное название",
+                    ),
+                ),
+                (
+                    "rating_kp",
+                    models.FloatField(
+                        blank=True, null=True, verbose_name="Рейтинг Кинопоиск"
+                    ),
+                ),
+                (
+                    "rating_imdb",
+                    models.FloatField(
+                        blank=True, null=True, verbose_name="Рейтинг IMDb"
+                    ),
+                ),
+                (
+                    "votes_kp",
+                    models.IntegerField(
+                        blank=True, null=True, verbose_name="Голоса Кинопоиск"
+                    ),
+                ),
+                (
+                    "votes_imdb",
+                    models.IntegerField(
+                        blank=True, null=True, verbose_name="Голоса IMDb"
+                    ),
+                ),
+                (
+                    "movie_length",
+                    models.IntegerField(
+                        blank=True,
+                        null=True,
+                        verbose_name="Продолжительность фильма (минуты)",
+                    ),
+                ),
+                (
+                    "persons",
+                    models.JSONField(blank=True, null=True, verbose_name="Персоны"),
+                ),
+                (
+                    "genres",
+                    models.ManyToManyField(
+                        blank=True, to="movies.genre", verbose_name="Жанр"
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Фильм',
-                'verbose_name_plural': 'Фильмы',
-                'ordering': ('name',),
-                'default_related_name': 'movies',
+                "verbose_name": "Фильм",
+                "verbose_name_plural": "Фильмы",
+                "ordering": ("name",),
+                "default_related_name": "movies",
             },
         ),
     ]
