@@ -1,9 +1,8 @@
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
-from services.constants import (
-    MAX_MOVIE_NAME_LENGTH, MAX_NAME_LENGTH,
-    MAX_GENRE_NAME_LENGTH, MAX_COLLECTION_NAME_LENGTH
-)
+from services.constants import (MAX_COLLECTION_NAME_LENGTH,
+                                MAX_GENRE_NAME_LENGTH, MAX_MOVIE_NAME_LENGTH,
+                                MAX_NAME_LENGTH)
 
 
 class Genre(models.Model):
