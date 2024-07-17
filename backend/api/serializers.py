@@ -135,6 +135,7 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
             "genres",
             "collections",
             "status",
+            "image",
         ]
 
     def validate_id(self, value):

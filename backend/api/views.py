@@ -122,6 +122,21 @@ class CustomSessionViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         return super().create(request, *args, **kwargs)
 
+    @session_schema["update"]
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+    def perform_update(self, serializer):
+        session = serializer.save()
+        self.update_session_image(session)
+
+    def update_session_image(self, session):
+        if session.status == 'closed' and session.matched_movies.exists():
+            top_movie = session.matched_movies.order_by('-rating_kp').first()
+            if top_movie and top_movie.poster:
+                session.image = top_movie.poster
+                session.save()
+
     @match_list_schema["get"]
     @action(detail=True, methods=["get"])
     def get_matched_movies(self, request, pk=None):
