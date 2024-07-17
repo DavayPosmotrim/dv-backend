@@ -1,6 +1,9 @@
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
-from services.constants import MAX_MOVIE_NAME_LENGTH, MAX_NAME_LENGTH
+from services.constants import (
+    MAX_MOVIE_NAME_LENGTH, MAX_NAME_LENGTH,
+    MAX_GENRE_NAME_LENGTH, MAX_COLLECTION_NAME_LENGTH
+)
 
 
 class Genre(models.Model):
@@ -8,7 +11,7 @@ class Genre(models.Model):
 
     name = models.CharField(
         "Название жанра",
-        max_length=MAX_MOVIE_NAME_LENGTH,
+        max_length=MAX_GENRE_NAME_LENGTH,
     )
 
     class Meta:
@@ -22,7 +25,7 @@ class Collection(models.Model):
 
     name = models.CharField(
         "Название подборки",
-        max_length=MAX_MOVIE_NAME_LENGTH,
+        max_length=MAX_COLLECTION_NAME_LENGTH,
     )
     slug = models.SlugField(
         unique=True,
