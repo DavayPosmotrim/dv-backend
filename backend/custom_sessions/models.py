@@ -62,3 +62,32 @@ class CustomSession(models.Model):
             return format_date(self.date)
         else:
             return 'Дата не установлена'
+
+
+class CustomSessionMovieVote(models.Model):
+    """Model for movie votes within session."""
+    session_id = models.ForeignKey(
+        CustomSession,
+        related_name="votes",
+        on_delete=models.CASCADE,
+    )
+    user_id = models.ForeignKey(
+        User,
+        related_name="votes",
+        on_delete=models.CASCADE
+    )
+    movie_id = models.ForeignKey(
+        Movie,
+        related_name="votes",
+        on_delete=models.CASCADE
+    )
+
+    class Meta:
+        verbose_name = "CustomSessionMovieVote"
+        verbose_name_plural = "CustomSessionMovieVotes"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["session_id", "user_id", "movie_id"],
+                name='unique_vote'
+            )
+        ]

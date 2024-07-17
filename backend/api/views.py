@@ -1,6 +1,6 @@
 from random import choice
 
-from custom_sessions.models import CustomSession
+from custom_sessions.models import CustomSession, CustomSessionMovieVote
 from django.shortcuts import get_object_or_404
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -14,9 +14,10 @@ from services.schemas import (collections_schema, genres_schema,
 from services.utils import send_websocket_message
 from users.models import User
 
-from .serializers import (CollectionSerializer, CustomSessionCreateSerializer,
-                          CustomUserSerializer, GenreSerializer,
-                          MovieDetailSerializer, MovieSerializer)
+from .serializers import (CollectionSerializer, CreateVoteSerializer,
+                          CustomSessionCreateSerializer, CustomUserSerializer,
+                          GenreSerializer, MovieDetailSerializer,
+                          MovieSerializer)
 
 
 class CreateUpdateUserView(APIView):
@@ -184,3 +185,59 @@ class MovieViewSet(viewsets.ReadOnlyModelViewSet):
             return Response(serializer.data)
         except ValueError:
             return Response({"error": "Некорректный movie ID"}, status=400)
+
+    @action(detail=True,
+            methods=["post", "delete"],
+            url_path="like")
+    def like(self, request, pk=None):
+        user_id = request.headers.get("Device-Id")
+        session_id = self.kwargs.get("session_id")
+        movie_id = pk
+        session = get_object_or_404(CustomSession, pk=session_id)
+        user_ids = session.users.values_list("id", flat=True)
+        if movie_id in session.matched_movies.values_list("id", flat=True):
+            error_message = "Этот фильм уже находится в совпадениях."
+            return Response({"error_message": error_message},
+                            status=status.HTTP_400_BAD_REQUEST)
+        if user_id not in user_ids:
+            error_message = ("Этот пользователь не может "
+                             "принимать участия в голосвании.")
+            return Response(
+                {"error_message": error_message},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        if movie_id not in session.movies.values_list("id", flat=True):
+            error_message = "Этого фильма нет в списке для голования."
+            return Response({"error_message": error_message},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        if request.method == "POST":
+            serializer = CreateVoteSerializer(data={
+                "user_id": user_id,
+                "session_id": session_id,
+                "movie_id": movie_id
+            })
+            if serializer.is_valid():
+                serializer.save()
+                if user_ids.count() == CustomSessionMovieVote.objects.filter(
+                    movie_id=movie_id,
+                    session_id=session_id
+                ).count():
+                    send_websocket_message(session_id, "matches", movie_id)
+                    session.matched_movies.add(movie_id)
+                    session.save()
+                return Response(serializer.data,
+                                status=status.HTTP_201_CREATED)
+            return Response(serializer.error,
+                            status=status.HTTP_400_BAD_REQUEST)
+        vote = CustomSessionMovieVote.objects.filter(
+            user_id=user_id,
+            session_id=session_id,
+            movie_id=movie_id
+        ).first()
+        if vote:
+            vote.delete()
+            return Response({"message": "Голос удален."},
+                            status=status.status.HTTP_204_NO_CONTENT)
+        return Response({"message": "Вы еще не проголосовали за этот фильм."},
+                        status=status.status.HTTP_204_NO_CONTENT)

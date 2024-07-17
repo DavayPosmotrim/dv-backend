@@ -1,15 +1,30 @@
 import logging
 
 import requests.exceptions
-from custom_sessions.models import CustomSession
+from custom_sessions.models import CustomSession, CustomSessionMovieVote
 from movies.models import Collection, Genre, Movie
 from rest_framework import serializers
+from rest_framework.validators import UniqueTogetherValidator
 from services.kinopoisk.kinopoisk_service import (KinopoiskMovieInfo,
                                                   KinopoiskMovies)
 from services.validators import validate_name
 from users.models import User
 
 logger = logging.getLogger("serializers")
+
+
+class CreateVoteSerializer(serializers.ModelSerializer):
+    """Serializer to add votes."""
+    class Meta:
+        model = CustomSessionMovieVote
+        fields = "__all__"
+        validators = [
+            UniqueTogetherValidator(
+                queryset=CustomSessionMovieVote.objects.all(),
+                fields=["session_id", "user_id", "movie_id"],
+                message="Вы уже проголосовали за этот фильм"
+            )
+        ]
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
