@@ -47,6 +47,12 @@ class CustomSession(models.Model):
         related_name='matched_movies_custom_sessions',
         verbose_name='Избранный фильм',
     )
+    image = models.ImageField(
+        "Ссылка на изображение",
+        upload_to="movies/images/",
+        null=True,
+        default=None,
+    )
 
     class Meta:
         ordering = ("date",)
@@ -62,3 +68,32 @@ class CustomSession(models.Model):
             return format_date(self.date)
         else:
             return 'Дата не установлена'
+
+
+class CustomSessionMovieVote(models.Model):
+    """Model for movie votes within session."""
+    session_id = models.ForeignKey(
+        CustomSession,
+        related_name="votes",
+        on_delete=models.CASCADE,
+    )
+    user_id = models.ForeignKey(
+        User,
+        related_name="votes",
+        on_delete=models.CASCADE
+    )
+    movie_id = models.ForeignKey(
+        Movie,
+        related_name="votes",
+        on_delete=models.CASCADE
+    )
+
+    class Meta:
+        verbose_name = "CustomSessionMovieVote"
+        verbose_name_plural = "CustomSessionMovieVotes"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["session_id", "user_id", "movie_id"],
+                name='unique_vote'
+            )
+        ]

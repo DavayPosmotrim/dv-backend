@@ -89,6 +89,17 @@ session_schema = {
             400: OpenApiResponse(description="Bad Request"),
         },
     ),
+    "update": extend_schema(
+        summary="Обновление данных сессии",
+        description="Обновляет данные сессии",
+        methods=["PATCH"],
+        parameters=[device_id_header],
+        request=CustomSessionCreateSerializer,
+        responses={
+            201: CustomSessionCreateSerializer,
+            400: OpenApiResponse(description="Bad Request"),
+        },
+    ),
 }
 
 genres_schema = {
