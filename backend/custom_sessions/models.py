@@ -47,6 +47,12 @@ class CustomSession(models.Model):
         related_name='matched_movies_custom_sessions',
         verbose_name='Избранный фильм',
     )
+    image = models.ImageField(
+        "Ссылка на изображение",
+        upload_to="movies/images/",
+        null=True,
+        default=None,
+    )
 
     class Meta:
         ordering = ("date",)
