@@ -1,9 +1,11 @@
 from random import choice
+from typing import Any, Optional
 
 from custom_sessions.models import CustomSession
 from django.shortcuts import get_object_or_404
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from services.kinopoisk.kinopoisk_service import (KinopoiskCollections,
@@ -119,27 +121,39 @@ class CustomSessionViewSet(viewsets.ModelViewSet):
     queryset = CustomSession.objects.all()
 
     @session_schema["create"]
-    def create(self, request, *args, **kwargs):
+    def create(
+        self, request: Request, *args: Any, **kwargs: Any
+    ) -> Response:
         return super().create(request, *args, **kwargs)
 
     @session_schema["update"]
-    def update(self, request, *args, **kwargs):
+    def update(
+        self, request: Request, *args: Any, **kwargs: Any
+    ) -> Response:
         return super().update(request, *args, **kwargs)
 
-    def perform_update(self, serializer):
+    def perform_update(
+        self, serializer: CustomSessionCreateSerializer
+    ) -> None:
         session = serializer.save()
         self.update_session_image(session)
 
-    def update_session_image(self, session):
-        if session.status == 'closed' and session.matched_movies.exists():
-            top_movie = session.matched_movies.order_by('-rating_kp').first()
-            if top_movie and top_movie.poster:
-                session.image = top_movie.poster
-                session.save()
+    def update_session_image(self, session: CustomSession) -> None:
+        if session.status == 'closed':
+            matched_movies = list(session.matched_movies)
+            if matched_movies:
+                top_movie = max(
+                    matched_movies, key=lambda movie: movie.rating_kp
+                )
+                if top_movie and top_movie.poster:
+                    session.image = top_movie.poster
+                    session.save()
 
     @match_list_schema["get"]
     @action(detail=True, methods=["get"])
-    def get_matched_movies(self, request, pk=None):
+    def get_matched_movies(
+        self, request: Request, pk: Optional[int] = None
+    ) -> Response:
         """Возвращает фильмы, за которые проголосовали все пользователи
         в сесиии (мэтчи) - или ошибку, если мэтчей нет ."""
         session = get_object_or_404(CustomSession, pk=pk)
