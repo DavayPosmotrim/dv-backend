@@ -13,7 +13,7 @@ from services.kinopoisk.kinopoisk_service import (KinopoiskCollections,
 from services.schemas import (collections_schema, genres_schema,
                               match_list_schema, movie_schema, roulette_schema,
                               session_schema, user_schema)
-from services.utils import send_websocket_message
+from services.utils import close_session, send_websocket_message
 from users.models import User
 
 from .serializers import (CollectionSerializer, CreateVoteSerializer,
@@ -42,8 +42,6 @@ class CreateUpdateUserView(APIView):
     @user_schema["create"]
     def post(self, request):
         device_id = request.headers.get("Device-Id")
-        print(device_id)
-        print(request.headers)
         if device_id:
             serializer = CustomUserSerializer(
                 data=request.data,
@@ -173,16 +171,60 @@ class CustomSessionViewSet(viewsets.ModelViewSet):
         session = get_object_or_404(CustomSession, pk=pk)
         matched_movies = session.matched_movies
         if matched_movies.count() > 2:
-            send_websocket_message(pk, "session_status", "roullete")
+            send_websocket_message(pk, "session_status", "roulette")
             random_movie = choice(matched_movies)
             random_movie_id = random_movie.id
             send_websocket_message(pk, "roulette", random_movie_id)
+            close_session(session, pk)
         else:
             error_message = "В списке совпадений должно быть более 2 фильмов."
             return Response(
                 {"error_message": error_message},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+    @action(detail=True,
+            methods=["post", "delete"],
+            url_path="connection")
+    def get_connection(self, request, pk=None):
+        user_id = request.headers.get("Device-Id")
+        user = get_object_or_404(User, pk=user_id)
+        session = get_object_or_404(CustomSession, pk=pk)
+        user_ids = session.users.values_list("id", flat=True)
+        if request.method == "POST":
+            if user_id in user_ids:
+                error_message = "Вы уже подключены к этому сеансу."
+            elif session.status == "waiting":
+                session.users.add(user)
+                session.save()
+                send_websocket_message(pk, "users", user.name)
+                message = f"Вы присоединились к сеансу {pk}"
+                return Response({"message": message},
+                                status=status.HTTP_201_CREATED)
+            else:
+                error_message = "К этому сеансу нельзя подключиться."
+            return Response(
+                {"error_message": error_message},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        # close session if user disconnects during the voting stage
+        # and broadcast the message to other users in the session
+        if user_id not in user_ids:
+            error_message = "Вы не являетесь участником данного сеанса."
+            return Response(
+                {"error_message": error_message},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if session.status == "voting":
+            close_session(session, pk)
+            return Response({"message": "Сеанс закрыт."},
+                            status=status.HTTP_200_OK)
+        # code for delete method
+        session.users.remove(user)
+        session.save()
+        send_websocket_message(pk, "users", f"-{user.name}")
+        return Response({"message": f"Вы покинули сеанс {pk}"},
+                        status=status.HTTP_204_NO_CONTENT)
 
 
 class MovieViewSet(viewsets.ReadOnlyModelViewSet):

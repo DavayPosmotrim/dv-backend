@@ -290,3 +290,24 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
         data = super().to_representation(instance)
         data["movies"] = MovieDetailSerializer(instance.movies, many=True).data
         return data
+
+
+class CustomSessionSerializer(serializers.ModelSerializer):
+    "Serializer for closed sessions."
+    users = serializers.StringRelatedField(many=True, read_only=True)
+    mathced_movies = MovieDetailSerializer(many=True, read_only=True)
+    mathced_movies_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CustomSession
+        fields = [
+            "id",
+            "users",
+            "matched_movies",
+            "date",
+            "image",
+            "mathced_movies_count",
+        ]
+
+    def get_mathced_movies_count(self, obj):
+        return obj.matched_movies.count()
