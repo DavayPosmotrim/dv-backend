@@ -197,7 +197,8 @@ class CustomSessionViewSet(viewsets.ModelViewSet):
             elif session.status == "waiting":
                 session.users.add(user)
                 session.save()
-                send_websocket_message(pk, "users", user.name)
+                serializer = CustomUserSerializer(session.users, many=True)
+                send_websocket_message(pk, "users", serializer.data)
                 message = f"Вы присоединились к сеансу {pk}"
                 return Response({"message": message},
                                 status=status.HTTP_201_CREATED)
@@ -222,7 +223,8 @@ class CustomSessionViewSet(viewsets.ModelViewSet):
         # code for delete method
         session.users.remove(user)
         session.save()
-        send_websocket_message(pk, "users", f"-{user.name}")
+        serializer = CustomUserSerializer(session.users, many=True)
+        send_websocket_message(pk, "users", serializer.data)
         return Response({"message": f"Вы покинули сеанс {pk}"},
                         status=status.HTTP_204_NO_CONTENT)
 
@@ -301,6 +303,7 @@ class MovieViewSet(viewsets.ReadOnlyModelViewSet):
                                 status=status.HTTP_201_CREATED)
             return Response(serializer.error,
                             status=status.HTTP_400_BAD_REQUEST)
+        # code for delete method
         vote = CustomSessionMovieVote.objects.filter(
             user_id=user_id,
             session_id=session_id,
@@ -309,6 +312,6 @@ class MovieViewSet(viewsets.ReadOnlyModelViewSet):
         if vote:
             vote.delete()
             return Response({"message": "Голос удален."},
-                            status=status.status.HTTP_204_NO_CONTENT)
+                            status=status.HTTP_204_NO_CONTENT)
         return Response({"message": "Вы еще не проголосовали за этот фильм."},
-                        status=status.status.HTTP_204_NO_CONTENT)
+                        status=status.HTTP_204_NO_CONTENT)
