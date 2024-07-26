@@ -76,7 +76,20 @@ class KinopoiskMovies(KinopoiskService):
         if pattern:
             params = {
                 search_by: pattern,
-                "selectFields": ("id", "name"),
+                "selectFields": (
+                    "id",
+                    "name",
+                    "description",
+                    "year",
+                    "countries",
+                    "poster",
+                    "alternativeName",
+                    "rating",
+                    "votes",
+                    "movieLength",
+                    "genres",
+                    "persons",
+                ),
                 "page": page,
                 "limit": limit,
                 "notNullFields": ("id", "name"),

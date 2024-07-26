@@ -1,12 +1,16 @@
 import logging
 
 import requests.exceptions
-from custom_sessions.models import CustomSession, CustomSessionMovieVote
-from movies.models import Collection, Genre, Movie
+
+from django.db import IntegrityError
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
-from services.kinopoisk.kinopoisk_service import (KinopoiskMovieInfo,
-                                                  KinopoiskMovies)
+
+from custom_sessions.models import CustomSession, CustomSessionMovieVote
+from movies.models import Collection, Genre, Movie
+from services.kinopoisk.kinopoisk_service import (
+    KinopoiskMovies
+)
 from services.validators import validate_name
 from users.models import User
 
@@ -187,7 +191,6 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
         )
         try:
             kinopoisk_movies_response = kinopoisk_service.get_movies()
-            logger.debug(f"Фильмы с кинопоиска-1: {kinopoisk_movies_response}")
             if kinopoisk_movies_response is None:
                 raise serializers.ValidationError(
                     "Данные о фильмах отсутствуют."
@@ -215,75 +218,73 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
         )
 
         all_movie_ids = []
+        missing_movie_ids = []
         for movie_data in kinopoisk_movies:
             movie_id = movie_data["id"]
-            detailed_movie_data = self.get_movie_details(movie_id)
-            # Получение фильма из БД или сохранение в нее
-            movie_obj, created = Movie.objects.get_or_create(
-                id=movie_id,
-            )
-            if created:
-                movie_genres = detailed_movie_data.get("genres", [])
-                genre_objects = []
-                for genre in movie_genres:
+            if not Movie.objects.filter(id=movie_id).exists():
+                logger.debug(f"Movie {movie_id} not found in database.")
+                missing_movie_ids.append(movie_id)
+            else:
+                logger.debug(f"Movie {movie_id} found in database.")
+                all_movie_ids.append(movie_id)
+
+        # Если есть отсутствующие фильмы, получаем их данные с Кинопоиска
+        if missing_movie_ids:
+            for movie_data in kinopoisk_movies:
+                movie_id = movie_data["id"]
+                movie_obj = Movie(id=movie_id)
+                # Получение данных постера
+                poster_data = movie_data.get("poster", {})
+                # Получение списка стран
+                countries_list = movie_data.get("countries", [])
+                countries = [country["name"] for country in countries_list]
+                # Получение данных рейтинга и голосов
+                rating_data = movie_data.get("rating", {})
+                votes_data = movie_data.get("votes", {})
+                # Получение списка актеров и режиссеров
+                actors = movie_data.get("actors", [])
+                directors = movie_data.get("directors", [])
+                # Заполнение полей фильма
+                movie_obj.name = movie_data.get("name", "")
+                movie_obj.poster = poster_data.get("url", "")
+                movie_obj.description = movie_data.get("description", "")
+                movie_obj.year = movie_data.get("year", None)
+                movie_obj.countries = countries
+                movie_obj.alternative_name = movie_data.get(
+                    "alternativeName", ""
+                )
+                movie_obj.rating_kp = rating_data.get("kp", 0)
+                movie_obj.rating_imdb = rating_data.get("imdb", 0)
+                movie_obj.votes_kp = votes_data.get("kp", 0)
+                movie_obj.votes_imdb = votes_data.get("imdb", 0)
+                movie_obj.movie_length = movie_data.get("movieLength", None)
+                movie_obj.actors = actors
+                movie_obj.directors = directors
+                # Заполнение жанров
+                genres = []
+                for genre in movie_data.get("genres", []):
                     genre_name = genre.get("name", "")
                     if genre_name:
                         genre_obj, created = Genre.objects.get_or_create(
                             name=genre_name
                         )
-                        genre_objects.append(genre_obj)
-                logger.debug(
-                    f"Genres for movie {movie_data['id']}: {genre_objects}"
-                )
-                poster_data = detailed_movie_data.get("poster", {})
-                countries_list = detailed_movie_data.get("countries", [])
-                countries = [country["name"] for country in countries_list]
-                rating_data = detailed_movie_data.get("rating", {})
-                votes_data = detailed_movie_data.get("votes", {})
-                actors = (detailed_movie_data.get("actors", []),)
-                directors = (detailed_movie_data.get("directors", []),)
-                movie_obj.name = movie_data.get("name", "")
-                movie_obj.poster = poster_data.get("url", "")
-                movie_obj.description = detailed_movie_data.get("description",
-                                                                "")
-                movie_obj.year = detailed_movie_data.get("year", None)
-                movie_obj.countries = countries
-                movie_obj.alternative_name = detailed_movie_data.get(
-                    "alternativeName", ""
-                )
-                movie_obj.rating_kp = rating_data.get("kp", None)
-                movie_obj.rating_imdb = rating_data.get("imdb", None)
-                movie_obj.votes_kp = votes_data.get("kp", None)
-                movie_obj.votes_imdb = votes_data.get("imdb", None)
-                movie_obj.movie_length = detailed_movie_data.get("movieLength",
-                                                                 None)
-                movie_obj.actors = actors
-                movie_obj.directors = directors
-                movie_obj.genres.set(genre_objects)
-                movie_obj.save()
-            all_movie_ids.append(movie_obj.id)
+                        genres.append(genre_obj)
+                # Сохранение объекта фильма
+                try:
+                    movie_obj.save()
+                    movie_obj.genres.set(genres)
+                    logger.debug(
+                        f"Genres for movie {movie_id}: "
+                        f"{[genre.name for genre in genres]}"
+                    )
+                    all_movie_ids.append(movie_obj.id)
+                except IntegrityError as e:
+                    logger.error(f"Failed to save movie {movie_id}: {e}")
         session = CustomSession.objects.create(**validated_data)
         # Добавление данных о всех фильмах в создаваемую сессию
         session.users.add(user)
         session.movies.set(all_movie_ids)
         return session
-
-    def get_movie_details(self, movie_id):
-        """Выполняет запрос к API Кинопоиска для получения
-        детальной информации о фильме."""
-        kinopoisk_movie_info_service = KinopoiskMovieInfo()
-        try:
-            detailed_movie_data = kinopoisk_movie_info_service.get_movie(
-                movie_id
-            )
-        except KeyError as e:
-            logger.error(f"KeyError: {e} for movie_id: {movie_id}")
-            return {}
-        except Exception as e:
-            logger.error(f"Unexpected error: {e} for movie_id: {movie_id}")
-            return {}
-
-        return detailed_movie_data
 
     def to_representation(self, instance):
         """Переопределяет метод для вывода данных сессии."""
