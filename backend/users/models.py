@@ -17,3 +17,6 @@ class User(models.Model):
         editable=False,
         primary_key=True,
     )
+
+    def __str__(self) -> str:
+        return self.name
