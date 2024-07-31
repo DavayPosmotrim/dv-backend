@@ -1,15 +1,12 @@
 import logging
 
 import requests.exceptions
-
-from rest_framework import serializers
-from rest_framework.validators import UniqueTogetherValidator
-
 from custom_sessions.models import CustomSession, CustomSessionMovieVote
 from movies.models import Collection, Genre, Movie
-from services.kinopoisk.kinopoisk_service import (
-    KinopoiskMovies, KinopoiskMovieInfo
-)
+from rest_framework import serializers
+from rest_framework.validators import UniqueTogetherValidator
+from services.kinopoisk.kinopoisk_service import (KinopoiskMovieInfo,
+                                                  KinopoiskMovies)
 from services.validators import validate_name
 from users.models import User
 
