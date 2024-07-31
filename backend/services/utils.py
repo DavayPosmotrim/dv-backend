@@ -40,7 +40,7 @@ def send_websocket_message(session_id, endpoint, message):
     )
 
 
-def get_session_image(self, session):
+def get_session_image(session):
     if session.status == 'closed':
         matched_movies = list(session.matched_movies)
         if matched_movies:
