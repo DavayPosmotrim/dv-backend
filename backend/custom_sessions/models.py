@@ -1,10 +1,9 @@
+import locale
 import random
 import string
-import locale
 
-from django.db import models
 from babel.dates import format_date
-
+from django.db import models
 from movies.models import Movie
 from services.constants import STATUS_CHOICES
 from users.models import User
