@@ -41,6 +41,18 @@ def send_websocket_message(session_id, endpoint, message):
     )
 
 
+def get_session_image(session):
+    if session.status == 'closed':
+        matched_movies = list(session.matched_movies)
+        if matched_movies:
+            top_movie = max(
+                matched_movies, key=lambda movie: movie.rating_kp
+            )
+            if top_movie and top_movie.poster:
+                session.image = top_movie.poster
+                session.save()
+
+                
 def close_session(session, session_id, send_status=True) -> None:
     new_status = "closed"
     session.status = new_status
