@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Union, Optional
+from typing import Any, Optional, Union
 
 import requests.exceptions
 from custom_sessions.models import CustomSession, CustomSessionMovieVote
