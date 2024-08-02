@@ -54,7 +54,7 @@ class CollectionSerializer(serializers.ModelSerializer):
         model = Collection
         fields = ["name", "slug", "cover"]
 
-    def get_cover(self, obj: dict[str, Any]) -> str | None:
+    def get_cover(self, obj: Collection) -> str | None:
         if "cover" in obj and "url" in obj["cover"]:
             return obj["cover"]["url"]
         else:
@@ -105,15 +105,13 @@ class MovieDetailSerializer(serializers.ModelSerializer):
 
     def validate(self, data: dict[str, Any]) -> dict[str, Any]:
         """Преобразование данных из внешнего источника в формат модели."""
-        movie_data: dict[str, Any] = data.get("movie_data", {})
+        movie_data = data.get("movie_data", {})
         # logger.debug(f"Movie data incoming: {movie_data}")
-        poster_data: dict[str, Any] = movie_data.get("poster", {})
-        countries_list: list[dict[str, Any]] = movie_data.get("countries", [])
-        rating_data: dict[str, Union[int, float]] = movie_data.get(
-            "rating", {}
-        )
-        votes_data: dict[str, Union[int, float]] = movie_data.get("votes", {})
-        genres: list[Genre] = []
+        poster_data = movie_data.get("poster", {})
+        countries_list = movie_data.get("countries", [])
+        rating_data = movie_data.get("rating", {})
+        votes_data = movie_data.get("votes", {})
+        genres = []
         for genre in movie_data.get("genres", []):
             genre_name = genre.get("name", "")
             if genre_name:
@@ -121,10 +119,8 @@ class MovieDetailSerializer(serializers.ModelSerializer):
                     name=genre_name
                 )
                 genres.append(genre_obj)
-        countries: list[str] = (
-            [country.get("name", "") for country in countries_list]
-        )
-        validated_data: dict[str, Any] = {
+        countries = ([country.get("name", "") for country in countries_list])
+        validated_data = {
             "genres": genres,
             "name": movie_data.get("name", ""),
             "poster": poster_data.get("url", ""),
@@ -150,9 +146,9 @@ class MovieDetailSerializer(serializers.ModelSerializer):
         и добавление фильма в БД при отсутствии."""
         if kinopoisk_movies is None:
             return []
-        all_movie_ids: list[int] = []
+        all_movie_ids = []
         for movie_data in kinopoisk_movies:
-            movie_id: int = movie_data["id"]
+            movie_id = movie_data["id"]
             if not Movie.objects.filter(id=movie_id).exists():
                 logger.debug(f"Фильм {movie_id} отсутствует в базе данных.")
                 self.create_movie(movie_data)
@@ -207,10 +203,10 @@ class MovieDetailSerializer(serializers.ModelSerializer):
         на основе валидированных данных."""
         # logger.debug(f"Creating or updating movie with data: {movie_data}")
 
-        validated_data: dict[str, Any] = self.validate(
+        validated_data = self.validate(
             {"movie_data": movie_data}
         )
-        movie_id: int = movie_data["id"]
+        movie_id = movie_data["id"]
         movie_obj, created = Movie.objects.update_or_create(
             id=movie_id,
             defaults={
@@ -229,7 +225,7 @@ class MovieDetailSerializer(serializers.ModelSerializer):
                 "countries": validated_data.get("countries", [])
             }
         )
-        genres: list[Genre] = validated_data.pop("genres", [])
+        genres = validated_data.pop("genres", [])
         if genres:
             movie_obj.genres.set(genres)
 
@@ -298,7 +294,7 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data: dict[str, Any]) -> CustomSession:
         request = self.context.get("request")
-        device_id: Optional[str] = request.headers.get("Device-Id")
+        device_id = request.headers.get("Device-Id")
         if not device_id:
             raise serializers.ValidationError(
                 {"message": "Требуется device_id"}
@@ -310,8 +306,8 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {"message": "Пользователь с указанным Device-Id не найден"}
             )
-        genres: list[str, list] = validated_data.pop("genres", [])
-        collections: list[str, list] = validated_data.pop("collections", [])
+        genres = validated_data.pop("genres", [])
+        collections = validated_data.pop("collections", [])
         # logger.debug(f"Genres from request: {genres}")
         # logger.debug(f"Collections from request: {collections}")
         movie_detail_serializer = MovieDetailSerializer()

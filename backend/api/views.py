@@ -145,7 +145,7 @@ class CustomSessionViewSet(viewsets.ModelViewSet):
     @roulette_schema["get"]
     @action(detail=True, methods=["get"])
     def get_roulette(
-        self, request: Request, pk: Optional[int] = None
+        self, request: Request, pk: Optional[str] = None
     ) -> Response:
         """Возвращает рандомный фильм
         если в списке совпадений более 2 фильмов или ошибку."""
