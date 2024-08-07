@@ -67,7 +67,12 @@ class CreateUpdateUserView(APIView):
         device_id = request.headers.get("Device-Id")
         if device_id:
             user = get_object_or_404(User, device_id=device_id)
-            serializer = CustomUserSerializer(user, data=request.data)
+            serializer = CustomUserSerializer(
+                user,
+                data=request.data,
+                partial=True,
+                context={"device_id": device_id},
+            )
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data)
