@@ -28,10 +28,10 @@ class CreateUpdateUserView(APIView):
     """
 
     @user_schema["get"]
-    def get(self, request):
-        device_id = request.headers.get("Device-Id")
+    def get(self, request: Request) -> Response:
+        device_id: Optional[str] = request.headers.get("Device-Id")
         if device_id:
-            user = get_object_or_404(User, device_id=device_id)
+            user: User = get_object_or_404(User, device_id=device_id)
             serializer = CustomUserSerializer(user)
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(
@@ -40,8 +40,8 @@ class CreateUpdateUserView(APIView):
         )
 
     @user_schema["create"]
-    def post(self, request):
-        device_id = request.headers.get("Device-Id")
+    def post(self, request: Request) -> Response:
+        device_id: Optional[str] = request.headers.get("Device-Id")
         if device_id:
             serializer = CustomUserSerializer(
                 data=request.data,
@@ -63,11 +63,16 @@ class CreateUpdateUserView(APIView):
         )
 
     @user_schema["update"]
-    def put(self, request):
-        device_id = request.headers.get("Device-Id")
+    def put(self, request: Request) -> Response:
+        device_id: Optional[str] = request.headers.get("Device-Id")
         if device_id:
             user = get_object_or_404(User, device_id=device_id)
-            serializer = CustomUserSerializer(user, data=request.data)
+            serializer = CustomUserSerializer(
+                user,
+                data=request.data,
+                partial=True,
+                context={"device_id": device_id},
+            )
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data)
@@ -85,9 +90,9 @@ class GenreListView(APIView):
     """Представление списка жанров."""
 
     @genres_schema["get"]
-    def get(self, request):
+    def get(self, request: Request) -> Response:
         kinopoisk_service = KinopoiskGenres()
-        genres_data = kinopoisk_service.get_genres()
+        genres_data: Optional[Any] = kinopoisk_service.get_genres()
         if not genres_data:
             return Response(
                 {"detail": "Ошибка получения жанров с Кинопоиска"},
@@ -101,9 +106,11 @@ class CollectionListView(APIView):
     """Представление списка подборок."""
 
     @collections_schema["get"]
-    def get(self, request):
+    def get(self, request: Request) -> Response:
         kinopoisk_service = KinopoiskCollections()
-        collections_data = kinopoisk_service.get_collections()
+        collections_data: Optional[dict[str, Any]] = (
+            kinopoisk_service.get_collections()
+        )
         if not collections_data:
             return Response(
                 {"detail": "Ошибка получения подборок с Кинопоиска"},
@@ -142,7 +149,9 @@ class CustomSessionViewSet(viewsets.ModelViewSet):
 
     @roulette_schema["get"]
     @action(detail=True, methods=["get"])
-    def get_roulette(self, request, pk=None):
+    def get_roulette(
+        self, request: Request, pk: Optional[str] = None
+    ) -> Response:
         """Возвращает рандомный фильм
         если в списке совпадений более 2 фильмов или ошибку."""
         session = get_object_or_404(CustomSession, pk=pk)
@@ -163,7 +172,9 @@ class CustomSessionViewSet(viewsets.ModelViewSet):
     @action(detail=True,
             methods=["post", "delete"],
             url_path="connection")
-    def get_connection(self, request, pk=None):
+    def get_connection(
+        self, request: Request, pk: Optional[int] = None
+    ) -> Response:
         user_id = request.headers.get("Device-Id")
         user = get_object_or_404(User, pk=user_id)
         session = get_object_or_404(CustomSession, pk=pk)
@@ -226,7 +237,9 @@ class MovieViewSet(viewsets.ReadOnlyModelViewSet):
         return super().get_serializer_class()
 
     @movie_schema["get"]
-    def retrieve(self, request, *args, **kwargs):
+    def retrieve(
+        self, request: Request, *args: Any, **kwargs: Any
+    ) -> Response:
         try:
             movie_id = int(kwargs.get("pk"))  # Преобразуем строку в число
             queryset = self.get_queryset()
@@ -239,7 +252,7 @@ class MovieViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=True,
             methods=["post", "delete"],
             url_path="like")
-    def like(self, request, pk=None):
+    def like(self, request: Request, pk: Optional[int] = None) -> Response:
         user_id = request.headers.get("Device-Id")
         session_id = self.kwargs.get("session_id")
         movie_id = pk

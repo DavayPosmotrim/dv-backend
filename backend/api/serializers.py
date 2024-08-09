@@ -1,4 +1,5 @@
 import logging
+from typing import Any, Optional
 
 import requests.exceptions
 from custom_sessions.models import CustomSession, CustomSessionMovieVote
@@ -37,7 +38,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
             "device_id": {"read_only": True},
         }
 
-    def validate(self, data):
+    def validate(self, data: dict[str, Any]) -> dict[str, Any]:
         # Automatically assign device_id from request context
         data["device_id"] = self.context.get("device_id")
         validate_name(data["name"])
@@ -53,7 +54,7 @@ class CollectionSerializer(serializers.ModelSerializer):
         model = Collection
         fields = ["name", "slug", "cover"]
 
-    def get_cover(self, obj):
+    def get_cover(self, obj: Collection) -> str | None:
         if "cover" in obj and "url" in obj["cover"]:
             return obj["cover"]["url"]
         else:
@@ -80,7 +81,7 @@ class MovieSerializer(serializers.ModelSerializer):
 class MovieDetailSerializer(serializers.ModelSerializer):
     """Сериализатор создания и детального представления фильма."""
 
-    genres = GenreSerializer(many=True)
+    genres: list[GenreSerializer] = GenreSerializer(many=True)
 
     class Meta:
         model = Movie
@@ -102,7 +103,7 @@ class MovieDetailSerializer(serializers.ModelSerializer):
             "actors",
         ]
 
-    def validate(self, data):
+    def validate(self, data: dict[str, Any]) -> dict[str, Any]:
         """Преобразование данных из внешнего источника в формат модели."""
         movie_data = data.get("movie_data", {})
         # logger.debug(f"Movie data incoming: {movie_data}")
@@ -118,7 +119,7 @@ class MovieDetailSerializer(serializers.ModelSerializer):
                     name=genre_name
                 )
                 genres.append(genre_obj)
-        countries = [country.get("name", "") for country in countries_list]
+        countries = ([country.get("name", "") for country in countries_list])
         validated_data = {
             "genres": genres,
             "name": movie_data.get("name", ""),
@@ -138,7 +139,9 @@ class MovieDetailSerializer(serializers.ModelSerializer):
         # logger.debug(f"Validated data: {validated_data}")
         return validated_data
 
-    def check_and_add_movies(self, kinopoisk_movies):
+    def check_and_add_movies(
+        self, kinopoisk_movies: Optional[list[dict[str, Any]]]
+    ) -> list[int]:
         """Проверка наличия фильма в базе данных
         и добавление фильма в БД при отсутствии."""
         if kinopoisk_movies is None:
@@ -156,7 +159,9 @@ class MovieDetailSerializer(serializers.ModelSerializer):
 
         return all_movie_ids
 
-    def fetch_kinopoisk_movies(self, genres, collections):
+    def fetch_kinopoisk_movies(
+        self, genres: list[str], collections: list[str]
+    ) -> list[dict[str, Any]]:
         """Получение данных с кинопоиска."""
         kinopoisk_service = KinopoiskMovies(
             genres=genres,
@@ -193,12 +198,14 @@ class MovieDetailSerializer(serializers.ModelSerializer):
                     "Ошибка при запросе к Кинопоиску."
                 )
 
-    def create_movie(self, movie_data):
+    def create_movie(self, movie_data: dict[str, Any]) -> Movie:
         """Создание или обновление фильма
         на основе валидированных данных."""
         # logger.debug(f"Creating or updating movie with data: {movie_data}")
 
-        validated_data = self.validate({"movie_data": movie_data})
+        validated_data = self.validate(
+            {"movie_data": movie_data}
+        )
         movie_id = movie_data["id"]
         movie_obj, created = Movie.objects.update_or_create(
             id=movie_id,
@@ -228,7 +235,7 @@ class MovieDetailSerializer(serializers.ModelSerializer):
 class MovieRouletteSerializer(serializers.ModelSerializer):
     """Сериализатор представления фильма для рулетки."""
 
-    genres = GenreSerializer(many=True)
+    genres: list[GenreSerializer] = GenreSerializer(many=True)
 
     class Meta:
         model = Movie
@@ -275,7 +282,7 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
             "image",
         ]
 
-    def validate_id(self, value):
+    def validate_id(self, value: str) -> str:
         """
         Проверяет уникальность сгенерированного идентификатора сессии.
         """
@@ -285,7 +292,7 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
             )
         return value
 
-    def create(self, validated_data):
+    def create(self, validated_data: dict[str, Any]) -> CustomSession:
         request = self.context.get("request")
         device_id = request.headers.get("Device-Id")
         if not device_id:
@@ -316,7 +323,7 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
         session.movies.set(all_movie_ids)
         return session
 
-    def to_representation(self, instance):
+    def to_representation(self, instance: CustomSession) -> dict[str, Any]:
         """Переопределяет метод для вывода данных сессии."""
         data = super().to_representation(instance)
         data["movies"] = MovieDetailSerializer(instance.movies, many=True).data
@@ -340,5 +347,5 @@ class CustomSessionSerializer(serializers.ModelSerializer):
             "mathced_movies_count",
         ]
 
-    def get_mathced_movies_count(self, obj):
+    def get_mathced_movies_count(self, obj: CustomSession) -> int:
         return obj.matched_movies.count()
