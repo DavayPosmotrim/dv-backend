@@ -1,5 +1,5 @@
 from random import choice
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
 from custom_sessions.models import CustomSession, CustomSessionMovieVote
 from django.shortcuts import get_object_or_404
@@ -8,6 +8,8 @@ from rest_framework.decorators import action
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.viewsets import GenericViewSet
+from rest_framework.mixins import ListModelMixin
 from services.kinopoisk.kinopoisk_service import (KinopoiskCollections,
                                                   KinopoiskGenres)
 from services.schemas import (collections_schema, genres_schema,
@@ -18,8 +20,9 @@ from users.models import User
 
 from .serializers import (CollectionSerializer, CreateVoteSerializer,
                           CustomSessionCreateSerializer, CustomUserSerializer,
-                          GenreSerializer, MovieDetailSerializer,
+                          GenreSerializer, MovieReadDetailSerializer,
                           MovieSerializer)
+from movies.models import Movie
 
 
 class CreateUpdateUserView(APIView):
@@ -217,9 +220,9 @@ class CustomSessionViewSet(viewsets.ModelViewSet):
                         status=status.HTTP_204_NO_CONTENT)
 
 
-class MovieViewSet(viewsets.ReadOnlyModelViewSet):
+class MovieViewSet(ListModelMixin, GenericViewSet):
     """
-    Представление списков и деталей фильмов.
+    Представление набора фильмов в сессии для голосования.
     """
 
     serializer_class = MovieSerializer
@@ -228,26 +231,6 @@ class MovieViewSet(viewsets.ReadOnlyModelViewSet):
         session_id = self.kwargs.get("session_id")
         session = get_object_or_404(CustomSession, id=session_id)
         return session.movies
-
-    def get_serializer_class(self):
-        if self.action == "list":
-            return MovieSerializer
-        if self.action == "retrieve":
-            return MovieDetailSerializer
-        return super().get_serializer_class()
-
-    @movie_schema["get"]
-    def retrieve(
-        self, request: Request, *args: Any, **kwargs: Any
-    ) -> Response:
-        try:
-            movie_id = int(kwargs.get("pk"))  # Преобразуем строку в число
-            queryset = self.get_queryset()
-            movie = get_object_or_404(queryset, id=movie_id)
-            serializer = self.get_serializer(movie)
-            return Response(serializer.data)
-        except ValueError:
-            return Response({"error": "Некорректный movie ID"}, status=400)
 
     @action(detail=True,
             methods=["post", "delete"],
@@ -305,3 +288,18 @@ class MovieViewSet(viewsets.ReadOnlyModelViewSet):
                             status=status.HTTP_204_NO_CONTENT)
         return Response({"message": "Вы еще не проголосовали за этот фильм."},
                         status=status.HTTP_204_NO_CONTENT)
+
+
+class MovieDetailView(APIView):
+    """
+    Представление для получения детальной информации о фильме.
+    """
+
+    @movie_schema["get"]
+    def get(
+        self, request: Request, *args: Any, **kwargs: Dict[str, Any]
+    ) -> Response:
+        movie_id = self.kwargs.get("movie_id")
+        movie = get_object_or_404(Movie, id=movie_id)
+        serializer = MovieReadDetailSerializer(movie)
+        return Response(serializer.data, status=status.HTTP_200_OK)

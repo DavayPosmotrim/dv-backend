@@ -1,4 +1,6 @@
 import logging
+
+from datetime import date
 from typing import Any, Optional
 
 import requests.exceptions
@@ -79,7 +81,7 @@ class MovieSerializer(serializers.ModelSerializer):
 
 
 class MovieDetailSerializer(serializers.ModelSerializer):
-    """Сериализатор создания и детального представления фильма."""
+    """Сериализатор создания фильма."""
 
     genres: list[GenreSerializer] = GenreSerializer(many=True)
 
@@ -232,6 +234,31 @@ class MovieDetailSerializer(serializers.ModelSerializer):
         return movie_obj
 
 
+class MovieReadDetailSerializer(serializers.ModelSerializer):
+    """Сериализатор детального представления фильма."""
+
+    genres: list[GenreSerializer] = GenreSerializer(many=True)
+
+    class Meta:
+        model = Movie
+        fields = [
+            "name",
+            "description",
+            "year",
+            "countries",
+            "poster",
+            "alternative_name",
+            "rating_kp",
+            "rating_imdb",
+            "votes_kp",
+            "votes_imdb",
+            "movie_length",
+            "genres",
+            "directors",
+            "actors",
+        ]
+
+
 class MovieRouletteSerializer(serializers.ModelSerializer):
     """Сериализатор представления фильма для рулетки."""
 
@@ -281,6 +308,7 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
             "status",
             "image",
         ]
+        read_only_fields = ["status", "image", "date"]
 
     def validate_id(self, value: str) -> str:
         """
@@ -318,7 +346,10 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
             kinopoisk_movies
         )
         # logger.debug(f"All movie IDs: {all_movie_ids}")
-        session = CustomSession.objects.create(**validated_data)
+        validated_data['date'] = date.today()
+        session = CustomSession.objects.create(
+            status="waiting", **validated_data
+        )
         session.users.add(user)
         session.movies.set(all_movie_ids)
         return session
@@ -326,7 +357,8 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
     def to_representation(self, instance: CustomSession) -> dict[str, Any]:
         """Переопределяет метод для вывода данных сессии."""
         data = super().to_representation(instance)
-        data["movies"] = MovieDetailSerializer(instance.movies, many=True).data
+        # Извлекаем только 'id' фильмов
+        data["movies"] = [movie.id for movie in instance.movies.all()]
         return data
 
 
