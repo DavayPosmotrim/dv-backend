@@ -1,8 +1,8 @@
 from api.serializers import (CollectionSerializer,
                              CustomSessionCreateSerializer,
                              CustomUserSerializer, GenreSerializer,
-                             MovieDetailSerializer, MovieRouletteSerializer,
-                             MovieSerializer)
+                             MovieReadDetailSerializer,
+                             MovieRouletteSerializer, MovieSerializer)
 from drf_spectacular.utils import (OpenApiParameter, OpenApiResponse,
                                    extend_schema)
 
@@ -144,12 +144,12 @@ movie_schema = {
         description=("Возвращает детали конкретного фильма"),
         methods=["GET"],
         responses={
-            200: MovieDetailSerializer(many=True),
+            200: MovieReadDetailSerializer(many=True),
             400: OpenApiResponse(description="Bad Request"),
         },
         parameters=[
             OpenApiParameter(
-                name="id",
+                name="movie_id",
                 type=int,
                 location=OpenApiParameter.PATH,
                 description="ID фильма",

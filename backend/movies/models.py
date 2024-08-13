@@ -130,7 +130,7 @@ class Movie(models.Model):
 
     class Meta:
         default_related_name = 'movies'
-        ordering = ("name",)
+        ordering = ("-rating_kp",)
         verbose_name = "Фильм"
         verbose_name_plural = "Фильмы"
 
