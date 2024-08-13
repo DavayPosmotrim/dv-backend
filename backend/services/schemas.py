@@ -2,8 +2,7 @@ from api.serializers import (CollectionSerializer,
                              CustomSessionCreateSerializer,
                              CustomUserSerializer, GenreSerializer,
                              MovieReadDetailSerializer,
-                             MovieRouletteSerializer,
-                             MovieSerializer)
+                             MovieRouletteSerializer, MovieSerializer)
 from drf_spectacular.utils import (OpenApiParameter, OpenApiResponse,
                                    extend_schema)
 

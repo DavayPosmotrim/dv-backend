@@ -3,13 +3,14 @@ from typing import Any, Dict, Optional
 
 from custom_sessions.models import CustomSession, CustomSessionMovieVote
 from django.shortcuts import get_object_or_404
+from movies.models import Movie
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.mixins import ListModelMixin
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
-from rest_framework.mixins import ListModelMixin
 from services.kinopoisk.kinopoisk_service import (KinopoiskCollections,
                                                   KinopoiskGenres)
 from services.schemas import (collections_schema, genres_schema,
@@ -22,7 +23,6 @@ from .serializers import (CollectionSerializer, CreateVoteSerializer,
                           CustomSessionCreateSerializer, CustomUserSerializer,
                           GenreSerializer, MovieReadDetailSerializer,
                           MovieSerializer)
-from movies.models import Movie
 
 
 class CreateUpdateUserView(APIView):
