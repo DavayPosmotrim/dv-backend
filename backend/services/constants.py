@@ -13,3 +13,5 @@ STATUS_CHOICES = [
     ("voting", "Голосование"),
     ("closed", "Закрыто"),
 ]
+
+MAX_MOVIES_QUANTITY = 2500

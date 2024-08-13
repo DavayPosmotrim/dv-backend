@@ -10,6 +10,7 @@ from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 from services.kinopoisk.kinopoisk_service import (KinopoiskMovieInfo,
                                                   KinopoiskMovies)
+from services.constants import MAX_MOVIES_QUANTITY
 from services.validators import validate_name
 from users.models import User
 
@@ -138,7 +139,6 @@ class MovieDetailSerializer(serializers.ModelSerializer):
             "votes_imdb": votes_data.get("imdb", 0),
             "movie_length": movie_data.get("movieLength"),
         }
-        # logger.debug(f"Validated data: {validated_data}")
         return validated_data
 
     def check_and_add_movies(
@@ -170,7 +170,9 @@ class MovieDetailSerializer(serializers.ModelSerializer):
             collections=collections
         )
         try:
-            all_movies = kinopoisk_service.get_all_movies(max_movies=2500)
+            all_movies = kinopoisk_service.get_all_movies(
+                max_movies=MAX_MOVIES_QUANTITY
+            )
             if all_movies:
                 KinopoiskMovieInfo._extract_persons(all_movies)
             logger.debug(

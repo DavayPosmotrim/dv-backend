@@ -5,6 +5,9 @@ from urllib.parse import urljoin
 import requests.exceptions
 from dotenv import load_dotenv
 
+from services.constants import MAX_MOVIES_QUANTITY
+
+
 load_dotenv()
 logger = logging.getLogger('kinopoisk')
 
@@ -110,7 +113,7 @@ class KinopoiskMovies(KinopoiskService):
     def get_all_movies(
             self,
             limit_per_page: int = 250,
-            max_movies: int = 2500
+            max_movies: int = MAX_MOVIES_QUANTITY
     ):
         """Получение всех фильмов с использованием пагинации."""
         all_movies = []
