@@ -4,9 +4,7 @@ from urllib.parse import urljoin
 
 import requests.exceptions
 from dotenv import load_dotenv
-
 from services.constants import MAX_MOVIES_QUANTITY
-
 
 load_dotenv()
 logger = logging.getLogger('kinopoisk')

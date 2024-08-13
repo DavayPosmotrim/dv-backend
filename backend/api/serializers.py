@@ -7,9 +7,9 @@ from custom_sessions.models import CustomSession, CustomSessionMovieVote
 from movies.models import Collection, Genre, Movie
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
+from services.constants import MAX_MOVIES_QUANTITY
 from services.kinopoisk.kinopoisk_service import (KinopoiskMovieInfo,
                                                   KinopoiskMovies)
-from services.constants import MAX_MOVIES_QUANTITY
 from services.validators import validate_name
 from users.models import User
 
