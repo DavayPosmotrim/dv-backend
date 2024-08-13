@@ -170,22 +170,13 @@ class MovieDetailSerializer(serializers.ModelSerializer):
             collections=collections
         )
         try:
-            kinopoisk_movies_response = kinopoisk_service.get_movies()
-            if kinopoisk_movies_response is None:
-                raise serializers.ValidationError(
-                    "Данные о фильмах отсутствуют."
-                )
-            elif "docs" not in kinopoisk_movies_response:
-                raise serializers.ValidationError(
-                    "Данные о фильмах имеют неверный формат."
-                )
-            kinopoisk_movies = kinopoisk_movies_response["docs"]
-            if kinopoisk_movies is not None:
-                KinopoiskMovieInfo._extract_persons(kinopoisk_movies)
+            all_movies = kinopoisk_service.get_all_movies(max_movies=2500)
+            if all_movies:
+                KinopoiskMovieInfo._extract_persons(all_movies)
             logger.debug(
-                f"Movies from Kinopoisk (first 2): {kinopoisk_movies[:2]}"
+                f"Total movies from Kinopoisk: {len(all_movies)}"
             )
-            return kinopoisk_movies
+            return all_movies
         except requests.exceptions.RequestException as e:
             logger.error(f"Ошибка при запросе к Кинопоиску: {e}")
             if (
