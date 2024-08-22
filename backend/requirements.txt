@@ -3,9 +3,11 @@ attrs==23.2.0
 autobahn==23.6.2
 Automat==22.10.0
 Babel==2.15.0
+carehare==1.0.2
 certifi==2024.6.2
 cffi==1.16.0
 channels==4.1.0
+channels-rabbitmq==4.0.1
 channels-redis==4.2.0
 charset-normalizer==3.3.2
 constantly==23.10.4
@@ -21,12 +23,15 @@ hyperlink==21.0.0
 idna==3.7
 incremental==22.10.0
 inflection==0.5.1
+iniconfig==2.0.0
 jsonschema==4.22.0
 jsonschema-specifications==2023.12.1
 mccabe==0.7.0
 msgpack==1.0.8
 packaging==24.0
+pamqp==3.3.0
 pillow==10.3.0
+pluggy==1.5.0
 psycopg2-binary==2.9.9
 pyasn1==0.6.0
 pyasn1_modules==0.4.0
@@ -34,6 +39,9 @@ pycodestyle==2.11.1
 pycparser==2.22
 pyflakes==3.2.0
 pyOpenSSL==24.1.0
+pytest==8.3.2
+pytest-asyncio==0.23.8
+pytest-django==4.8.0
 python-dotenv==1.0.1
 pytz==2024.1
 PyYAML==6.0.1

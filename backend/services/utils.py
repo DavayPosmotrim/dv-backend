@@ -39,3 +39,4 @@ def close_session(session, session_id, send_status=True) -> None:
         send_websocket_message(session_id, "session_result", serializer.data)
     if send_status:
         send_websocket_message(session_id, "session_status", new_status)
+
