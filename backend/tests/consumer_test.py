@@ -28,13 +28,19 @@ async def send_websocket_message(session_id, endpoint, message):
 async def test_custom_session_consumer():
     # Setup the application with the consumer
     test_application = URLRouter([
-        path("ws/session/<session_id>/<endpoint>/", CustomSessionConsumer.as_asgi()),
+        path(
+            "ws/session/<session_id>/<endpoint>/",
+            CustomSessionConsumer.as_asgi()
+        ),
     ])
     session_id = "abc123"
     endopoint = "data"
 
     # Create a communicator connected to your consumer
-    communicator = WebsocketCommunicator(test_application, f"/ws/session/{session_id}/{endopoint}/")
+    communicator = WebsocketCommunicator(
+        test_application,
+        f"/ws/session/{session_id}/{endopoint}/"
+    )
     connected, _ = await communicator.connect()
     assert connected
 

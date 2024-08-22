@@ -2,13 +2,13 @@ import locale
 import random
 import string
 
-# from babel.dates import format_date
+from babel.dates import format_date
 from django.db import models
 from movies.models import Movie
 from services.constants import STATUS_CHOICES
 from users.models import User
 
-# locale.setlocale(locale.LC_TIME, 'ru_RU.UTF-8')
+locale.setlocale(locale.LC_TIME, 'ru_RU.UTF-8')
 
 
 def generate_id():
@@ -66,11 +66,11 @@ class CustomSession(models.Model):
     def __str__(self):
         return f"CustomSession {self.id or 'Unknown'}"
 
-    # def get_formatted_date(self):
-    #     if self.date:
-    #         return format_date(self.date, format='d MMMM y', locale='ru')
-    #     else:
-    #         return 'Дата не установлена'
+    def get_formatted_date(self):
+        if self.date:
+            return format_date(self.date, format='d MMMM y', locale='ru')
+        else:
+            return 'Дата не установлена'
 
 
 class CustomSessionMovieVote(models.Model):
