@@ -1,12 +1,17 @@
 # api/consumers.py
 import json
+import logging
 
-from channels.generic.websocket import AsyncWebsocketConsumer
+from asgiref.sync import async_to_sync
+from channels.generic.websocket import WebsocketConsumer
+
+logger = logging.getLogger("websocket")
 
 
-class ChatConsumer(AsyncWebsocketConsumer):
-    async def connect(self):
-        self.room_name = self.scope["url_route"]["kwargs"]["room_name"]
+class CustomSessionConsumer(WebsocketConsumer):
+    def connect(self):
+        logger.info("WebSocket connection attempt")
+        self.room_name = self.scope["url_route"]["kwargs"]["session_id"]
         self.endpoint = self.scope["url_route"]["kwargs"]["endpoint"]
         self.room_group_name = f"chat_{self.room_name}"
 
