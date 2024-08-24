@@ -7,6 +7,7 @@ from custom_sessions.models import CustomSession, CustomSessionMovieVote
 from movies.models import Collection, Genre, Movie
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
+from services.constants import MAX_MOVIES_QUANTITY
 from services.kinopoisk.kinopoisk_service import (KinopoiskMovieInfo,
                                                   KinopoiskMovies)
 from services.validators import validate_name
@@ -137,7 +138,6 @@ class MovieDetailSerializer(serializers.ModelSerializer):
             "votes_imdb": votes_data.get("imdb", 0),
             "movie_length": movie_data.get("movieLength"),
         }
-        # logger.debug(f"Validated data: {validated_data}")
         return validated_data
 
     def check_and_add_movies(
@@ -169,22 +169,15 @@ class MovieDetailSerializer(serializers.ModelSerializer):
             collections=collections
         )
         try:
-            kinopoisk_movies_response = kinopoisk_service.get_movies()
-            if kinopoisk_movies_response is None:
-                raise serializers.ValidationError(
-                    "Данные о фильмах отсутствуют."
-                )
-            elif "docs" not in kinopoisk_movies_response:
-                raise serializers.ValidationError(
-                    "Данные о фильмах имеют неверный формат."
-                )
-            kinopoisk_movies = kinopoisk_movies_response["docs"]
-            if kinopoisk_movies is not None:
-                KinopoiskMovieInfo._extract_persons(kinopoisk_movies)
-            logger.debug(
-                f"Movies from Kinopoisk (first 2): {kinopoisk_movies[:2]}"
+            all_movies = kinopoisk_service.get_all_movies(
+                max_movies=MAX_MOVIES_QUANTITY
             )
-            return kinopoisk_movies
+            if all_movies:
+                KinopoiskMovieInfo._extract_persons(all_movies)
+            logger.debug(
+                f"Total movies from Kinopoisk: {len(all_movies)}"
+            )
+            return all_movies
         except requests.exceptions.RequestException as e:
             logger.error(f"Ошибка при запросе к Кинопоиску: {e}")
             if (

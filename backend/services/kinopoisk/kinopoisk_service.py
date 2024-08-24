@@ -1,10 +1,13 @@
+import logging
 import os
 from urllib.parse import urljoin
 
 import requests.exceptions
 from dotenv import load_dotenv
+from services.constants import MAX_MOVIES_QUANTITY
 
 load_dotenv()
+logger = logging.getLogger('kinopoisk')
 
 
 class KinopoiskService:
@@ -104,6 +107,35 @@ class KinopoiskMovies(KinopoiskService):
             return self._perform_get_request(self.movies_url, params)
 
         raise ValueError("You should pass either genres or collections")
+
+    def get_all_movies(
+            self,
+            limit_per_page: int = 250,
+            max_movies: int = MAX_MOVIES_QUANTITY
+    ):
+        """Получение всех фильмов с использованием пагинации."""
+        all_movies = []
+        page = 1
+        try:
+            while len(all_movies) < max_movies:
+                kinopoisk_movies_response = self.get_movies(
+                    page=page, limit=limit_per_page
+                )
+                if kinopoisk_movies_response is None:
+                    raise ValueError("Данные о фильмах отсутствуют.")
+                elif "docs" not in kinopoisk_movies_response:
+                    raise ValueError("Данные о фильмах имеют неверный формат.")
+                kinopoisk_movies = kinopoisk_movies_response["docs"]
+                if not kinopoisk_movies:
+                    break
+                all_movies.extend(kinopoisk_movies)
+                page += 1
+                if len(kinopoisk_movies) < limit_per_page:
+                    break
+            return all_movies[:max_movies]
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Ошибка при запросе к Кинопоиску: {e}")
+            raise e
 
 
 class KinopoiskCollections(KinopoiskService):
