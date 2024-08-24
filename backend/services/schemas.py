@@ -1,10 +1,8 @@
-from api.serializers import (CollectionSerializer,
-                             CreateVoteSerializer,
+from api.serializers import (CollectionSerializer, CreateVoteSerializer,
                              CustomSessionCreateSerializer,
                              CustomUserSerializer, GenreSerializer,
                              MovieReadDetailSerializer,
                              MovieRouletteSerializer, MovieSerializer)
-
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (OpenApiParameter, OpenApiResponse,
                                    extend_schema)
