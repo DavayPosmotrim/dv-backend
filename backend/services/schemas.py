@@ -1,8 +1,11 @@
 from api.serializers import (CollectionSerializer,
+                             CreateVoteSerializer,
                              CustomSessionCreateSerializer,
                              CustomUserSerializer, GenreSerializer,
                              MovieReadDetailSerializer,
                              MovieRouletteSerializer, MovieSerializer)
+
+from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (OpenApiParameter, OpenApiResponse,
                                    extend_schema)
 
@@ -156,4 +159,65 @@ movie_schema = {
             )
         ],
     )
+}
+
+like_schema = {
+    "create": extend_schema(
+        summary="Лайк к фильму",
+        description="Создает голос за фильм из списка фильмов текущей сессии",
+        methods=["POST"],
+        parameters=[
+            OpenApiParameter(
+                name='session_id',
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.PATH
+            ),
+            OpenApiParameter(
+                name='id',
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.PATH
+            ),
+            device_id_header
+        ],
+        responses={
+            201: CreateVoteSerializer,
+            400: OpenApiResponse(description="Bad Request"),
+        },
+    ),
+    "delete": extend_schema(
+        summary="Удаление лайка к фильму",
+        description="Удаляет голос за фильм из списка фильмов текущей сессии",
+        methods=["DELETE"],
+        parameters=[
+            OpenApiParameter(
+                name='session_id',
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.PATH
+            ),
+            OpenApiParameter(
+                name='id',
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.PATH
+            ),
+            device_id_header
+        ],
+        responses={
+            204: OpenApiResponse(description="No Content"),
+            400: OpenApiResponse(description="Bad Request"),
+            404: OpenApiResponse(description="Vote Not Found"),
+        },
+    ),
+}
+
+connection_schema = {
+    "create": extend_schema(
+        summary="Подключение пользователей к сессии",
+        description="Добавляет юзеров в базу данных в модель сессии",
+        methods=["POST"],
+        parameters=[device_id_header],
+        responses={
+            201: CustomSessionCreateSerializer,
+            400: OpenApiResponse(description="Bad Request"),
+        },
+    ),
 }

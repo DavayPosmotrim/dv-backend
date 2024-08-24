@@ -357,8 +357,8 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
 class CustomSessionSerializer(serializers.ModelSerializer):
     "Serializer for closed sessions."
     users = serializers.StringRelatedField(many=True, read_only=True)
-    mathced_movies = MovieDetailSerializer(many=True, read_only=True)
-    mathced_movies_count = serializers.SerializerMethodField()
+    matched_movies = MovieDetailSerializer(many=True, read_only=True)
+    matched_movies_count = serializers.SerializerMethodField()
 
     class Meta:
         model = CustomSession
@@ -368,8 +368,8 @@ class CustomSessionSerializer(serializers.ModelSerializer):
             "matched_movies",
             "date",
             "image",
-            "mathced_movies_count",
+            "matched_movies_count",
         ]
 
-    def get_mathced_movies_count(self, obj: CustomSession) -> int:
+    def get_matched_movies_count(self, obj: CustomSession) -> int:
         return obj.matched_movies.count()
