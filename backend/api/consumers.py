@@ -13,7 +13,7 @@ class CustomSessionConsumer(WebsocketConsumer):
         logger.info("WebSocket connection attempt")
         self.room_name = self.scope["url_route"]["kwargs"]["session_id"]
         self.endpoint = self.scope["url_route"]["kwargs"]["endpoint"]
-        self.room_group_name = f"chat_{self.room_name}"
+        self.room_group_name = f"chat_{self.room_name}_{self.endpoint}"
 
         # Join room group
         async_to_sync(self.channel_layer.group_add)(
