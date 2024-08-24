@@ -75,14 +75,16 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "backend.wsgi.application"
 # Channels
-RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", default="amqp://guest:guest@127.0.0.1/asgi")
+REDIS_HOST = os.getenv("REDIS_HOST", default="127.0.0.1")
+REDIS_PORT = os.getenv("REDIS_PORT", default=6379)
+
 
 ASGI_APPLICATION = "backend.asgi.application"
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": "channels_rabbitmq.core.RabbitmqChannelLayer",
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "host": RABBITMQ_HOST,
+            "hosts": [(REDIS_HOST, int(REDIS_PORT))],
         },
     },
 }
