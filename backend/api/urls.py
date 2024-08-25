@@ -12,9 +12,6 @@ router.register(r"sessions", CustomSessionViewSet, basename="sessions")
 router.register(
     r"sessions/(?P<session_id>[^/.]+)/movies", MovieViewSet, basename="movie"
 )
-# router.register(
-#     r"sessions/(?P<session_id>[^/.]+)/movies", MovieViewSet, basename="movie"
-# )
 
 urlpatterns = [
     path("", include(router.urls)),

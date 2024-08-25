@@ -1,6 +1,6 @@
 """Служебные функции . """
 
-from api.serializers import CustomSessionSerializer
+# from api.serializers import CustomSessionSerializer
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 
@@ -33,8 +33,8 @@ def close_session(session, session_id, send_status=True) -> None:
     new_status = "closed"
     session.status = new_status
     session.save()
-    if session.matched_movies.exists():
-        serializer = CustomSessionSerializer(session)
-        send_websocket_message(session_id, "session_result", serializer.data)
-    if send_status:
-        send_websocket_message(session_id, "session_status", new_status)
+    # if session.matched_movies.exists():
+    #     serializer = CustomSessionSerializer(session)
+    #     send_websocket_message(session_id, "session_result", serializer.data)
+    # if send_status:
+    #     send_websocket_message(session_id, "session_status", new_status)

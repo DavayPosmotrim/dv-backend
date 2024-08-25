@@ -5,6 +5,7 @@ from uuid import UUID
 
 from custom_sessions.models import CustomSession, CustomSessionMovieVote
 from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import extend_schema
 from movies.models import Movie
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -15,11 +16,8 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
 from services.kinopoisk.kinopoisk_service import (KinopoiskCollections,
                                                   KinopoiskGenres)
-from services.schemas import (collections_schema, connection_schema,
-                              genres_schema, like_schema, match_list_schema,
-                              movie_schema, roulette_schema, session_schema,
-                              user_schema)
-from services.utils import close_session, send_websocket_message
+from services.schemas import device_id_header
+from services.utils import close_session
 from users.models import User
 
 from .serializers import (CollectionSerializer, CreateVoteSerializer,
@@ -35,7 +33,7 @@ class CreateUpdateUserView(APIView):
     View to get, create and update user data.
     """
 
-    @user_schema["get"]
+    @extend_schema(parameters=[device_id_header])
     def get(self, request: Request) -> Response:
         device_id: Optional[str] = request.headers.get("Device-Id")
         if device_id:
@@ -47,7 +45,7 @@ class CreateUpdateUserView(APIView):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    @user_schema["create"]
+    @extend_schema(parameters=[device_id_header])
     def post(self, request: Request) -> Response:
         device_id: Optional[str] = request.headers.get("Device-Id")
         if device_id:
@@ -70,7 +68,7 @@ class CreateUpdateUserView(APIView):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    @user_schema["update"]
+    @extend_schema(parameters=[device_id_header])
     def put(self, request: Request) -> Response:
         device_id: Optional[str] = request.headers.get("Device-Id")
         if device_id:
@@ -97,7 +95,7 @@ class CreateUpdateUserView(APIView):
 class GenreListView(APIView):
     """Представление списка жанров."""
 
-    @genres_schema["get"]
+    @extend_schema(parameters=[device_id_header])
     def get(self, request: Request) -> Response:
         kinopoisk_service = KinopoiskGenres()
         genres_data: Optional[Any] = kinopoisk_service.get_genres()
@@ -113,7 +111,7 @@ class GenreListView(APIView):
 class CollectionListView(APIView):
     """Представление списка подборок."""
 
-    @collections_schema["get"]
+    @extend_schema(parameters=[device_id_header])
     def get(self, request: Request) -> Response:
         kinopoisk_service = KinopoiskCollections()
         collections_data: Optional[dict[str, Any]] = (
@@ -134,13 +132,13 @@ class CustomSessionViewSet(viewsets.ModelViewSet):
     serializer_class = CustomSessionCreateSerializer
     queryset = CustomSession.objects.all()
 
-    @session_schema["create"]
+    @extend_schema(parameters=[device_id_header])
     def create(
         self, request: Request, *args: Any, **kwargs: Any
     ) -> Response:
         return super().create(request, *args, **kwargs)
 
-    @match_list_schema["get"]
+    @extend_schema(parameters=[device_id_header])
     @action(detail=True, methods=["get"])
     def get_matched_movies(
         self, request: Request, pk: Optional[int] = None
@@ -155,7 +153,7 @@ class CustomSessionViewSet(viewsets.ModelViewSet):
         else:
             return Response({"message": "Нет ни одного совпадения"})
 
-    @roulette_schema["get"]
+    @extend_schema(parameters=[device_id_header])
     @action(detail=True, methods=["get"])
     def get_roulette(
         self, request: Request, pk: Optional[str] = None
@@ -165,10 +163,10 @@ class CustomSessionViewSet(viewsets.ModelViewSet):
         session = get_object_or_404(CustomSession, pk=pk)
         matched_movies = session.matched_movies.all()
         if matched_movies.count() > 2:
-            send_websocket_message(pk, "session_status", "roulette")
+            # send_websocket_message(pk, "session_status", "roulette")
             random_movie = choice(list(matched_movies))
             random_movie_id = random_movie.id
-            send_websocket_message(pk, "roulette", random_movie_id)
+            # send_websocket_message(pk, "roulette", random_movie_id)
             close_session(session, pk)
             return Response(
                 {"random_movie_id": random_movie_id},
@@ -181,25 +179,29 @@ class CustomSessionViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-    @connection_schema['create']
+    @extend_schema(parameters=[device_id_header], request=None)
     @action(detail=True,
             methods=["post", "delete"],
             url_path="connection")
     def get_connection(
         self, request: Request, pk: Optional[int] = None
     ) -> Response:
+        """Метод для добавления и удаления пользователь в сессии:
+        - POST - для добавления пользователя,
+        - DELETE - для удаления пользователя."""
         user_id = request.headers.get("Device-Id")
         user = get_object_or_404(User, pk=user_id)
         session = get_object_or_404(CustomSession, pk=pk)
         user_ids = session.users.values_list("device_id", flat=True)
+        user_uuid = UUID(user_id)
         if request.method == "POST":
-            if user_id in user_ids:
+            if user_uuid in user_ids:
                 error_message = "Вы уже подключены к этому сеансу."
             elif session.status == "waiting":
                 session.users.add(user)
                 session.save()
-                serializer = CustomUserSerializer(session.users, many=True)
-                send_websocket_message(pk, "users", serializer.data)
+                # serializer = CustomUserSerializer(session.users, many=True)
+                # send_websocket_message(pk, "users", serializer.data)
                 message = f"Вы присоединились к сеансу {pk}"
                 return Response({"message": message},
                                 status=status.HTTP_201_CREATED)
@@ -211,7 +213,7 @@ class CustomSessionViewSet(viewsets.ModelViewSet):
             )
         # close session if user disconnects during the voting stage
         # and broadcast the message to other users in the session
-        if user_id not in user_ids:
+        if user_uuid not in user_ids:
             error_message = "Вы не являетесь участником данного сеанса."
             return Response(
                 {"error_message": error_message},
@@ -224,8 +226,8 @@ class CustomSessionViewSet(viewsets.ModelViewSet):
         # code for delete method
         session.users.remove(user)
         session.save()
-        serializer = CustomUserSerializer(session.users, many=True)
-        send_websocket_message(pk, "users", serializer.data)
+        # serializer = CustomUserSerializer(session.users, many=True)
+        # send_websocket_message(pk, "users", serializer.data)
         return Response({"message": f"Вы покинули сеанс {pk}"},
                         status=status.HTTP_204_NO_CONTENT)
 
@@ -242,50 +244,31 @@ class MovieViewSet(ListModelMixin, GenericViewSet):
         session = get_object_or_404(CustomSession, id=session_id)
         return session.movies
 
-    @like_schema["create"]
+    @extend_schema(parameters=[device_id_header])
     @action(detail=True,
             methods=["post", "delete"],
             url_path="like")
-    def like(
-        self, request: Request,
-        *args, **kwargs
-    ) -> Response:
+    def like(self, request: Request, *args, **kwargs) -> Response:
+        """
+        Метод для добавления и удаления лайков:
+        - POST - добавляет лайк,
+        - DELETE - удаляет лайк.
+        """
         user_id = request.headers.get("Device-Id")
         session_id = kwargs.get("session_id")
-        movie_id = kwargs.get("pk")
+        movie_id = int(kwargs.get("pk"))
         session = get_object_or_404(CustomSession, pk=session_id)
         user_ids = session.users.values_list("device_id", flat=True)
         movie_ids = session.movies.values_list("id", flat=True)
-        logger.debug(f"User IDs in session: {list(user_ids)}")
-        logger.debug(f"User ID from request: {user_id}")
-        logger.debug(f"Movie IDs in session: {list(movie_ids)}")
-        logger.debug(f"Movie ID from request: {movie_id}")
+        user_uuid = UUID(user_id)
         if movie_id in session.matched_movies.values_list("id", flat=True):
             error_message = "Этот фильм уже находится в совпадениях."
             return Response({"error_message": error_message},
                             status=status.HTTP_400_BAD_REQUEST)
-        try:
-            user_id_uuid = UUID(user_id)
-        except ValueError:
-            # Если преобразование не удалось, возвращаем ошибку
-            error_message = "Некорректный формат идентификатора пользователя."
-            return Response(
-                {"error_message": error_message},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        if user_id_uuid not in user_ids:
+        if user_uuid not in user_ids:
             # if user_id not in user_ids:
             error_message = ("Этот пользователь не может "
                              "принимать участие в голосовании.")
-            return Response(
-                {"error_message": error_message},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        try:
-            movie_id = int(movie_id)
-        except ValueError:
-            # Если преобразование не удалось, возвращаем ошибку
-            error_message = "Некорректный формат идентификатора фильма."
             return Response(
                 {"error_message": error_message},
                 status=status.HTTP_400_BAD_REQUEST
@@ -307,8 +290,9 @@ class MovieViewSet(ListModelMixin, GenericViewSet):
                     movie_id=movie_id,
                     session_id=session_id
                 ).count():
-                    send_websocket_message(session_id, "matches", movie_id)
-                    session.matched_movies.add(movie_id)
+                    # send_websocket_message(session_id, "matches", movie_id)
+                    movie = get_object_or_404(Movie, pk=movie_id)
+                    session.matched_movies.add(movie)
                     session.save()
                 return Response(serializer.data,
                                 status=status.HTTP_201_CREATED)
@@ -323,7 +307,7 @@ class MovieViewSet(ListModelMixin, GenericViewSet):
         if vote:
             vote.delete()
             return Response({"message": "Голос удален."},
-                            status=status.HTTP_204_NO_CONTENT)
+                            status=status.HTTP_200_OK)
         return Response({"message": "Вы еще не проголосовали за этот фильм."},
                         status=status.HTTP_404_NOT_FOUND)
 
@@ -333,7 +317,7 @@ class MovieDetailView(APIView):
     Представление для получения детальной информации о фильме.
     """
 
-    @movie_schema["get"]
+    @extend_schema(parameters=[device_id_header])
     def get(
         self, request: Request, *args: Any, **kwargs: Dict[str, Any]
     ) -> Response:
