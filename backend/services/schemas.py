@@ -220,4 +220,14 @@ connection_schema = {
             400: OpenApiResponse(description="Bad Request"),
         },
     ),
+    "delete": extend_schema(
+        summary="Отключение пользователей от сессии",
+        description="Удаляет юзера из объекта сессии",
+        methods=["DELETE"],
+        parameters=[device_id_header],
+        responses={
+            204: OpenApiResponse(description="No Content"),
+            400: OpenApiResponse(description="Bad Request"),
+        },
+    ),
 }
