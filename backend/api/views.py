@@ -1,7 +1,7 @@
 import logging
-from uuid import UUID
 from random import choice
 from typing import Any, Dict, Optional
+from uuid import UUID
 
 from custom_sessions.models import CustomSession, CustomSessionMovieVote
 from django.shortcuts import get_object_or_404
@@ -16,10 +16,9 @@ from rest_framework.viewsets import GenericViewSet
 from services.kinopoisk.kinopoisk_service import (KinopoiskCollections,
                                                   KinopoiskGenres)
 from services.schemas import (collections_schema, connection_schema,
-                              genres_schema,
-                              like_schema,
-                              match_list_schema, movie_schema, roulette_schema,
-                              session_schema, user_schema)
+                              genres_schema, like_schema, match_list_schema,
+                              movie_schema, roulette_schema, session_schema,
+                              user_schema)
 from services.utils import close_session, send_websocket_message
 from users.models import User
 
@@ -27,7 +26,6 @@ from .serializers import (CollectionSerializer, CreateVoteSerializer,
                           CustomSessionCreateSerializer, CustomUserSerializer,
                           GenreSerializer, MovieReadDetailSerializer,
                           MovieSerializer)
-
 
 logger = logging.getLogger(__name__)
 
