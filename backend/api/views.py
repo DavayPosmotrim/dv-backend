@@ -222,7 +222,7 @@ class CustomSessionViewSet(viewsets.ModelViewSet):
         # close session if user disconnects during the voting stage
         # and broadcast the message to other users in the session
         logger.debug(f"start user disconnect {user_uuid=}, {user_ids=}")
-        
+
         if user_uuid not in user_ids:
             error_message = "Вы не являетесь участником данного сеанса."
             return Response(

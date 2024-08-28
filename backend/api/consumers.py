@@ -22,10 +22,12 @@ class CustomSessionConsumer(WebsocketConsumer):
         )
 
         self.accept()
-        logger.info(f"WebSocket connection established for room: {self.room_group_name}")
+        logger.info("WebSocket connection established for room: "
+                    f"{self.room_group_name}")
 
     def disconnect(self, close_code):
-        logger.info(f"WebSocket disconnected from room: {self.room_group_name} with code: {close_code}")
+        logger.info("WebSocket disconnected from room: "
+                    f"{self.room_group_name} with code: {close_code}")
 
         # Leave room group
         async_to_sync(self.channel_layer.group_discard)(
@@ -39,6 +41,7 @@ class CustomSessionConsumer(WebsocketConsumer):
 
         text_data_json = json.loads(text_data)
         message = text_data_json["message"]
+        logger.info(f"Message content: {message}")
 
         # Send message to room group
         async_to_sync(self.channel_layer.group_send)(
@@ -48,6 +51,7 @@ class CustomSessionConsumer(WebsocketConsumer):
     # Receive message from room group
     def chat_message(self, event):
         message = event["message"]
+        logger.info(f"Sending message to WebSocket: {message}")
 
         # Send message to WebSocket
         self.send(text_data=json.dumps({"message": message}))

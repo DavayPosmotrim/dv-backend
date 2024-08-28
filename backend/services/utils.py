@@ -7,6 +7,7 @@ from channels.layers import get_channel_layer
 
 logger = logging.getLogger(__name__)
 
+
 def send_websocket_message(session_id, endpoint, message):
     """Send message to room_group_name on websocket."""
     logger.info(f"sending {message=}")
@@ -19,7 +20,7 @@ def send_websocket_message(session_id, endpoint, message):
             "message": message,
         }
     )
-    logger.info(f"message sent")
+    logger.info("message sent")
     async_to_sync(channel_layer.send)('test_channel', {'type': 'hello'})
     received = async_to_sync(channel_layer.receive)("test_channel")
     logger.info(f"{received=}")

@@ -8,7 +8,7 @@ from movies.models import Movie
 from services.constants import STATUS_CHOICES
 from users.models import User
 
-# locale.setlocale(locale.LC_TIME, 'ru_RU.UTF-8')
+locale.setlocale(locale.LC_TIME, 'ru_RU.UTF-8')
 
 
 def generate_id():
