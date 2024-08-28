@@ -17,7 +17,7 @@ from rest_framework.viewsets import GenericViewSet
 from services.kinopoisk.kinopoisk_service import (KinopoiskCollections,
                                                   KinopoiskGenres)
 from services.schemas import device_id_header
-from services.utils import close_session
+from services.utils import close_session, send_websocket_message
 from users.models import User
 
 from .serializers import (CollectionSerializer, CreateVoteSerializer,
@@ -163,10 +163,10 @@ class CustomSessionViewSet(viewsets.ModelViewSet):
         session = get_object_or_404(CustomSession, pk=pk)
         matched_movies = session.matched_movies.all()
         if matched_movies.count() > 2:
-            # send_websocket_message(pk, "session_status", "roulette")
+            send_websocket_message(pk, "session_status", "roulette")
             random_movie = choice(list(matched_movies))
             random_movie_id = random_movie.id
-            # send_websocket_message(pk, "roulette", random_movie_id)
+            send_websocket_message(pk, "roulette", random_movie_id)
             close_session(session, pk)
             return Response(
                 {"random_movie_id": random_movie_id},
@@ -200,8 +200,8 @@ class CustomSessionViewSet(viewsets.ModelViewSet):
             elif session.status == "waiting":
                 session.users.add(user)
                 session.save()
-                # serializer = CustomUserSerializer(session.users, many=True)
-                # send_websocket_message(pk, "users", serializer.data)
+                serializer = CustomUserSerializer(session.users, many=True)
+                send_websocket_message(pk, "users", serializer.data)
                 message = f"Вы присоединились к сеансу {pk}"
                 return Response({"message": message},
                                 status=status.HTTP_201_CREATED)
@@ -213,6 +213,8 @@ class CustomSessionViewSet(viewsets.ModelViewSet):
             )
         # close session if user disconnects during the voting stage
         # and broadcast the message to other users in the session
+        logger.debug(f"start user disconnect {user_uuid=}, {user_ids=}")
+        
         if user_uuid not in user_ids:
             error_message = "Вы не являетесь участником данного сеанса."
             return Response(
@@ -226,10 +228,10 @@ class CustomSessionViewSet(viewsets.ModelViewSet):
         # code for delete method
         session.users.remove(user)
         session.save()
-        # serializer = CustomUserSerializer(session.users, many=True)
-        # send_websocket_message(pk, "users", serializer.data)
+        serializer = CustomUserSerializer(session.users, many=True)
+        send_websocket_message(pk, "users", serializer.data)
         return Response({"message": f"Вы покинули сеанс {pk}"},
-                        status=status.HTTP_204_NO_CONTENT)
+                        status=status.HTTP_200_OK)
 
 
 class MovieViewSet(ListModelMixin, GenericViewSet):
@@ -290,7 +292,7 @@ class MovieViewSet(ListModelMixin, GenericViewSet):
                     movie_id=movie_id,
                     session_id=session_id
                 ).count():
-                    # send_websocket_message(session_id, "matches", movie_id)
+                    send_websocket_message(session_id, "matches", movie_id)
                     movie = get_object_or_404(Movie, pk=movie_id)
                     session.matched_movies.add(movie)
                     session.save()

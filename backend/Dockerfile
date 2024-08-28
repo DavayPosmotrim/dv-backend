@@ -19,9 +19,6 @@ ENV LC_ALL ru_RU.UTF-8
 WORKDIR /app
 # Дальнейшие инструкции будут выполняться в директории /app
 
-# Установить пакет guincorn
-RUN pip install gunicorn==20.1.0
-
 # Скопировать с локального компьютера файл зависимостей
 # в текущую директорию (текущая директория — это /app).
 COPY requirements.txt .
@@ -29,11 +26,21 @@ COPY requirements.txt .
 # Выполнить в текущей директории команду терминала
 # для установки зависимостей.
 RUN pip install -r requirements.txt --no-cache-dir
+RUN pip install daphne supervisor
 
 # Скопировать всё необходимое содержимое 
 # той директории локального компьютера, где сохранён Dockerfile,
 # в текущую рабочую директорию образа — /app.
 COPY . .
 
-# При старте контейнера запустить сервер разработки.
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "backend.wsgi"]
+# Create log directory
+RUN mkdir -p /app/logs
+
+# Copy Supervisor configuration
+COPY supervisord.conf /etc/supervisord.conf
+
+# Make port 8000 available to the world outside this container
+EXPOSE 8000
+
+# Run Supervisor when the container launches
+CMD ["supervisord", "-c", "/etc/supervisord.conf"]

@@ -18,7 +18,7 @@ urlpatterns = [
     path("users/", CreateUpdateUserView.as_view(), name="create_update_user"),
     path("genres/", GenreListView.as_view(), name="genre_list"),
     path(
-        "movies/<int:movie_id>/",
+        "movies/<int:id>/",
         MovieDetailView.as_view(), name="movie_detail"
     ),
     path("collections/",
