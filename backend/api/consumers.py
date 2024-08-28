@@ -22,8 +22,11 @@ class CustomSessionConsumer(WebsocketConsumer):
         )
 
         self.accept()
+        logger.info(f"WebSocket connection established for room: {self.room_group_name}")
 
     def disconnect(self, close_code):
+        logger.info(f"WebSocket disconnected from room: {self.room_group_name} with code: {close_code}")
+
         # Leave room group
         async_to_sync(self.channel_layer.group_discard)(
             self.room_group_name,
@@ -32,6 +35,8 @@ class CustomSessionConsumer(WebsocketConsumer):
 
     # Receive message from WebSocket
     def receive(self, text_data):
+        logger.info(f"Received WebSocket message: {text_data}")
+
         text_data_json = json.loads(text_data)
         message = text_data_json["message"]
 

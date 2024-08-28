@@ -45,7 +45,11 @@ class CreateUpdateUserView(APIView):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    @extend_schema(parameters=[device_id_header])
+    @extend_schema(
+        parameters=[device_id_header],
+        request=CustomUserSerializer,
+        responses=CustomUserSerializer,
+    )
     def post(self, request: Request) -> Response:
         device_id: Optional[str] = request.headers.get("Device-Id")
         if device_id:
@@ -68,7 +72,11 @@ class CreateUpdateUserView(APIView):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    @extend_schema(parameters=[device_id_header])
+    @extend_schema(
+        parameters=[device_id_header],
+        request=CustomUserSerializer,
+        responses=CustomUserSerializer,
+    )
     def put(self, request: Request) -> Response:
         device_id: Optional[str] = request.headers.get("Device-Id")
         if device_id:
