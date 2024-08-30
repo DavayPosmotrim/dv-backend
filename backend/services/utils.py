@@ -30,7 +30,7 @@ def close_session(session, session_id, send_status=True) -> None:
     new_status = "closed"
     session.status = new_status
     if session.matched_movies.exists():
-        matched_movies = list(session.matched_movies)
+        matched_movies = list(session.matched_movies.all())
         top_movie = max(
             matched_movies, key=lambda movie: movie.rating_kp
         )
