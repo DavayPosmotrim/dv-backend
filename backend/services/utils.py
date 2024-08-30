@@ -1,12 +1,16 @@
 """Служебные функции . """
+import logging
 
 from api.serializers import CustomSessionSerializer
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 
+logger = logging.getLogger(__name__)
+
 
 def send_websocket_message(session_id, endpoint, message):
     """Send message to room_group_name on websocket."""
+    logger.info(f"sending {message=}")
     channel_layer = get_channel_layer()
     room_group_name = "_".join(["chat", session_id, endpoint])
     async_to_sync(channel_layer.group_send)(
@@ -16,25 +20,24 @@ def send_websocket_message(session_id, endpoint, message):
             "message": message,
         }
     )
-
-
-def get_session_image(session):
-    matched_movies = list(session.matched_movies)
-    if matched_movies:
-        top_movie = max(
-            matched_movies, key=lambda movie: movie.rating_kp
-        )
-        if top_movie and top_movie.poster:
-            session.image = top_movie.poster
-            session.save()
+    logger.info("message sent")
+    async_to_sync(channel_layer.send)('test_channel', {'type': 'hello'})
+    received = async_to_sync(channel_layer.receive)("test_channel")
+    logger.info(f"{received=}")
 
 
 def close_session(session, session_id, send_status=True) -> None:
     new_status = "closed"
     session.status = new_status
-    session.save()
     if session.matched_movies.exists():
+        matched_movies = list(session.matched_movies)
+        top_movie = max(
+            matched_movies, key=lambda movie: movie.rating_kp
+        )
+        if top_movie and top_movie.poster:
+            session.image = top_movie.poster
         serializer = CustomSessionSerializer(session)
         send_websocket_message(session_id, "session_result", serializer.data)
     if send_status:
         send_websocket_message(session_id, "session_status", new_status)
+    session.save()
