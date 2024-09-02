@@ -241,6 +241,33 @@ class CustomSessionViewSet(viewsets.ModelViewSet):
         return Response({"message": f"Вы покинули сеанс {pk}"},
                         status=status.HTTP_200_OK)
 
+    @action(detail=True,
+            methods=["get"],
+            url_path="start_voting")
+    def get_start_voting(
+        self, request: Request, pk: Optional[int] = None
+    ) -> Response:
+        """Меняет статус сессии на voting
+        и отправляет сообщение о изменении на вебсокет."""
+        session = get_object_or_404(CustomSession, pk=pk)
+        if session.status != "waiting":
+            error_message = "Эту сессию нельзя перевести в режим голосования"
+            return Response(
+                {"error_message": error_message},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        if session.users.count() < 2:
+            return Response(
+                {"error_message": "Участников должно быть 2 и более"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        new_status = "voting"
+        session.status = new_status
+        session.save()
+        send_websocket_message(pk, "session_status", new_status)
+        return Response({"message": "Вы начали сеанс"},
+                        status=status.HTTP_200_OK)
+
 
 class MovieViewSet(ListModelMixin, GenericViewSet):
     """
