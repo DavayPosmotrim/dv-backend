@@ -358,7 +358,7 @@ class MovieDetailView(APIView):
     def get(
         self, request: Request, *args: Any, **kwargs: Dict[str, Any]
     ) -> Response:
-        movie_id = self.kwargs.get("movie_id")
+        movie_id = self.kwargs.get("id")
         movie = get_object_or_404(Movie, id=movie_id)
         serializer = MovieReadDetailSerializer(movie)
         return Response(serializer.data, status=status.HTTP_200_OK)
