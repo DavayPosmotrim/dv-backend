@@ -6,7 +6,7 @@ from uuid import UUID
 from custom_sessions.models import CustomSession, CustomSessionMovieVote
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
-from movies.models import Movie
+from movies.models import Collection, Genre, Movie
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.mixins import ListModelMixin
@@ -105,6 +105,11 @@ class GenreListView(APIView):
 
     @extend_schema(parameters=[device_id_header])
     def get(self, request: Request) -> Response:
+        genres = Genre.objects.all()
+        if genres.exists():
+            serializer = GenreSerializer(genres, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        # Если база пуста, получаем жанры с API кинопоиск
         kinopoisk_service = KinopoiskGenres()
         genres_data: Optional[Any] = kinopoisk_service.get_genres()
         if not genres_data:
@@ -112,6 +117,9 @@ class GenreListView(APIView):
                 {"detail": "Ошибка получения жанров с Кинопоиска"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+        # сохраняем объекты в базу данных
+        for genre_data in genres_data:
+            Genre.objects.create(name=genre_data['name'])
         serializer = GenreSerializer(genres_data, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -121,6 +129,11 @@ class CollectionListView(APIView):
 
     @extend_schema(parameters=[device_id_header])
     def get(self, request: Request) -> Response:
+        collections = Collection.objects.all()
+        if collections.exists():
+            serializer = CollectionSerializer(collections, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        # Если база пуста, получаем подборки с API кинопоиск
         kinopoisk_service = KinopoiskCollections()
         collections_data: Optional[dict[str, Any]] = (
             kinopoisk_service.get_collections()
@@ -129,6 +142,13 @@ class CollectionListView(APIView):
             return Response(
                 {"detail": "Ошибка получения подборок с Кинопоиска"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        # сохраняем объекты в базу данных
+        for collection_data in collections_data['docs']:
+            Collection.objects.create(
+                name=collection_data['name'],
+                slug=collection_data['slug'],
+                cover=collection_data.get('cover')
             )
         serializer = CollectionSerializer(collections_data["docs"], many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
