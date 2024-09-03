@@ -57,10 +57,9 @@ class CollectionSerializer(serializers.ModelSerializer):
         fields = ["name", "slug", "cover"]
 
     def get_cover(self, obj: Collection) -> str | None:
-        if "cover" in obj and "url" in obj["cover"]:
-            return obj["cover"]["url"]
-        else:
-            return None
+        if obj.cover:
+            return obj.cover.url
+        return None
 
 
 class GenreSerializer(serializers.ModelSerializer):
@@ -234,6 +233,7 @@ class MovieReadDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Movie
         fields = [
+            "id",
             "name",
             "description",
             "year",

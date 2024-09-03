@@ -180,7 +180,10 @@ class KinopoiskMovieInfo(KinopoiskService):
             movie["directors"] = []
             actor_count = 0
             director_count = 0
-            for person in movie["persons"]:
+            # Используем get с пустым списком по умолчанию
+            persons = movie.get("persons", [])
+
+            for person in persons:
                 if person["enProfession"] == "actor" and actor_count < 4:
                     movie["actors"].append(person["name"])
                     actor_count += 1
@@ -188,7 +191,9 @@ class KinopoiskMovieInfo(KinopoiskService):
                       and director_count < 4):
                     movie["directors"].append(person["name"])
                     director_count += 1
-            del movie["persons"]
+            # Удаляем ключ только если он существует
+            if "persons" in movie:
+                del movie["persons"]
 
     def get_movie(self, movie_id: int):
         """

@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    # "django_q",
     "drf_spectacular",
     "rest_framework",
     "debug_toolbar",
@@ -210,3 +211,13 @@ LOGGING = {
         },
     },
 }
+
+# Q_CLUSTER = {
+#     'name': 'DP_DjangoQ',
+#     'workers': 4,
+#     'recycle': 500,
+#     'timeout': 180,
+#     'queue_limit': 50,
+#     'bulk': 10,
+#     'orm': 'default',  # Использует базу данных Django по умолчанию
+# }
