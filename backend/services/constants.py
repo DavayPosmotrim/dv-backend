@@ -14,4 +14,4 @@ STATUS_CHOICES = [
     ("closed", "Закрыто"),
 ]
 
-MAX_MOVIES_QUANTITY = 2500
+MAX_MOVIES_QUANTITY = 500
