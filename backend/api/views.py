@@ -1,19 +1,22 @@
 import logging
+import requests
 from random import choice
 from typing import Any, Dict, Optional
 from uuid import UUID
 
 from custom_sessions.models import CustomSession, CustomSessionMovieVote
+from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from movies.models import Collection, Genre, Movie
-from rest_framework import status, viewsets
+from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.mixins import ListModelMixin
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
+
 from services.kinopoisk.kinopoisk_service import (KinopoiskCollections,
                                                   KinopoiskGenres)
 from services.schemas import device_id_header
@@ -21,11 +24,14 @@ from services.utils import close_session, send_websocket_message
 from users.models import User
 
 from .serializers import (CollectionSerializer, CreateVoteSerializer,
-                          CustomSessionCreateSerializer, CustomUserSerializer,
+                          CustomSessionCreateSerializer,
+                          CustomSessionListSerializer,
+                          CustomSessionSerializer,
+                          CustomUserSerializer,
                           GenreSerializer, MovieReadDetailSerializer,
                           MovieSerializer)
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("views")
 
 
 class CreateUpdateUserView(APIView):
@@ -131,6 +137,9 @@ class CollectionListView(APIView):
     def get(self, request: Request) -> Response:
         collections = Collection.objects.all()
         if collections.exists():
+            logger.debug(
+                f"Найдено {collections.count()} подборок в базе данных."
+            )
             serializer = CollectionSerializer(collections, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         # Если база пуста, получаем подборки с API кинопоиск
@@ -143,28 +152,137 @@ class CollectionListView(APIView):
                 {"detail": "Ошибка получения подборок с Кинопоиска"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+        logger.debug(
+            "Получены данные о подборках с Кинопоиска,"
+            "сохранение в базу данных."
+        )
         # сохраняем объекты в базу данных
         for collection_data in collections_data['docs']:
-            Collection.objects.create(
-                name=collection_data['name'],
-                slug=collection_data['slug'],
-                cover=collection_data.get('cover')
-            )
-        serializer = CollectionSerializer(collections_data["docs"], many=True)
+            try:
+                cover_data = collection_data.get('cover')
+                if cover_data and isinstance(cover_data, dict):
+                    cover_url = cover_data.get('url')
+                    response = requests.get(cover_url)
+                    if response.status_code == 200:
+                        cover_file = ContentFile(response.content)
+                        collection, created = Collection.objects.get_or_create(
+                            slug=collection_data['slug'],
+                            defaults={'name': collection_data['name']}
+                        )
+                        # Явное сохранение файла в поле cover
+                        if created or not collection.cover:
+                            collection.cover.save(
+                                f"{collection.slug}.jpg",
+                                cover_file
+                            )
+                    else:
+                        logger.error(
+                            f"Не удалось загрузить изображение с URL: {cover_url}"
+                        )
+                else:
+                    collection, created = Collection.objects.get_or_create(
+                        slug=collection_data['slug'],
+                        defaults={
+                            'name': collection_data['name']
+                        }
+                    )
+                if created:
+                    logger.debug(f"Создана новая подборка: {collection.name}")
+                else:
+                    logger.debug(f"Подборка {collection.name} уже существует.")
+            except Exception as e:
+                logger.error(
+                    f"Ошибка при создании или получении подборки: {e}"
+                )
+        # Обновляем queryset после добавления новых объектов
+        collections = Collection.objects.all()
+        serializer = CollectionSerializer(collections, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class CustomSessionViewSet(viewsets.ModelViewSet):
-    """Представление сессий ."""
+class CustomSessionViewSet(
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    viewsets.GenericViewSet
+):
+    """Представление сессий без PUT, PATCH и DELETE."""
 
     serializer_class = CustomSessionCreateSerializer
     queryset = CustomSession.objects.all()
 
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            session_id = self.kwargs.get("pk")
+            session = get_object_or_404(
+                CustomSession, id=session_id
+            )
+            if session.status == "closed":
+                return CustomSessionSerializer
+            return super().get_serializer_class()
+        if self.action == 'list':
+            return CustomSessionListSerializer
+        else:
+            return super().get_serializer_class()
+
     @extend_schema(parameters=[device_id_header])
-    def create(
+    def create(self, request: Request, *args: Any, **kwargs: Any
+               ) -> Response:
+
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            instance = serializer.save()
+            if instance is None:
+                return Response(
+                    {"error": "Failed to save instance"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST
+            )
+
+    def validate_device_id(
+            self, device_id: Optional[str]
+    ) -> Optional[Response]:
+        """Проверяет наличие Device-Id,
+        при отсутствии возвращает Response с ошибкой."""
+        if not device_id:
+            return Response(
+                {"detail": "Device-Id header is required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        return None
+
+    @extend_schema(parameters=[device_id_header])
+    def list(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        device_id = request.headers.get("Device-Id")
+        error_response = self.validate_device_id(device_id)
+        if error_response:
+            return error_response
+        # Фильтрация сессий по device_id
+        filtered_sessions = self.queryset.filter(
+            users__device_id=device_id
+        )
+        serializer = self.get_serializer(filtered_sessions, many=True)
+        return Response(serializer.data)
+
+    @extend_schema(parameters=[device_id_header])
+    def retrieve(
         self, request: Request, *args: Any, **kwargs: Any
     ) -> Response:
-        return super().create(request, *args, **kwargs)
+        device_id = request.headers.get("Device-Id")
+        error_response = self.validate_device_id(device_id)
+        if error_response:
+            return error_response
+        # Фильтрация сессии по id и device_id
+        session = get_object_or_404(
+            self.queryset.filter(users__device_id=device_id),
+            pk=self.kwargs.get("pk")
+        )
+        serializer = self.get_serializer(session)
+        return Response(serializer.data)
 
     @extend_schema(parameters=[device_id_header])
     @action(detail=True, methods=["get"])
@@ -173,7 +291,15 @@ class CustomSessionViewSet(viewsets.ModelViewSet):
     ) -> Response:
         """Возвращает фильмы, за которые проголосовали все пользователи
         в сесиии (мэтчи) - или ошибку, если мэтчей нет ."""
-        session = get_object_or_404(CustomSession, pk=pk)
+        device_id = request.headers.get("Device-Id")
+        error_response = self.validate_device_id(device_id)
+        if error_response:
+            return error_response
+        # Фильтрация сессии по id и device_id
+        session = get_object_or_404(
+            self.queryset.filter(users__device_id=device_id),
+            pk=pk
+        )
         matched_movies = session.matched_movies
         if matched_movies:
             serializer = MovieSerializer(matched_movies, many=True)
@@ -188,7 +314,15 @@ class CustomSessionViewSet(viewsets.ModelViewSet):
     ) -> Response:
         """Возвращает рандомный фильм
         если в списке совпадений более 2 фильмов или ошибку."""
-        session = get_object_or_404(CustomSession, pk=pk)
+        device_id = request.headers.get("Device-Id")
+        error_response = self.validate_device_id(device_id)
+        if error_response:
+            return error_response
+        # Фильтрация сессии по id и device_id
+        session = get_object_or_404(
+            self.queryset.filter(users__device_id=device_id),
+            pk=pk
+        )
         matched_movies = session.matched_movies.all()
         if matched_movies.count() > 2:
             send_websocket_message(pk, "session_status", "roulette")
@@ -261,6 +395,7 @@ class CustomSessionViewSet(viewsets.ModelViewSet):
         return Response({"message": f"Вы покинули сеанс {pk}"},
                         status=status.HTTP_200_OK)
 
+    @extend_schema(parameters=[device_id_header], request=None)
     @action(detail=True,
             methods=["get"],
             url_path="start_voting")
@@ -269,7 +404,15 @@ class CustomSessionViewSet(viewsets.ModelViewSet):
     ) -> Response:
         """Меняет статус сессии на voting
         и отправляет сообщение о изменении на вебсокет."""
-        session = get_object_or_404(CustomSession, pk=pk)
+        device_id = request.headers.get("Device-Id")
+        error_response = self.validate_device_id(device_id)
+        if error_response:
+            return error_response
+        # Фильтрация сессии по id и device_id
+        session = get_object_or_404(
+            self.queryset.filter(users__device_id=device_id),
+            pk=pk
+        )
         if session.status != "waiting":
             error_message = "Эту сессию нельзя перевести в режим голосования"
             return Response(
@@ -301,7 +444,7 @@ class MovieViewSet(ListModelMixin, GenericViewSet):
         session = get_object_or_404(CustomSession, id=session_id)
         return session.movies
 
-    @extend_schema(parameters=[device_id_header])
+    @extend_schema(parameters=[device_id_header], request=None)
     @action(detail=True,
             methods=["post", "delete"],
             url_path="like")

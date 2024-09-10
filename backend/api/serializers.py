@@ -47,6 +47,14 @@ class CustomUserSerializer(serializers.ModelSerializer):
         return data
 
 
+class CustomUserReadSerializer(serializers.ModelSerializer):
+    """Сериализатор пользователей для представлений."""
+
+    class Meta:
+        model = User
+        fields = ("name",)
+
+
 class CollectionSerializer(serializers.ModelSerializer):
     """Сериализатор подборки."""
 
@@ -328,36 +336,54 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
             )
         genres = validated_data.pop("genres", [])
         collections = validated_data.pop("collections", [])
-        # logger.debug(f"Genres from request: {genres}")
-        # logger.debug(f"Collections from request: {collections}")
+        logger.debug(f"Genres from request: {genres}")
+        logger.debug(f"Collections from request: {collections}")
         movie_detail_serializer = MovieDetailSerializer()
         kinopoisk_movies = movie_detail_serializer.fetch_kinopoisk_movies(
             genres, collections
         )
+
         all_movie_ids = movie_detail_serializer.check_and_add_movies(
             kinopoisk_movies
         )
-        # logger.debug(f"All movie IDs: {all_movie_ids}")
+        logger.debug(f"All movie IDs: {all_movie_ids}")
         validated_data['date'] = date.today()
-        session = CustomSession.objects.create(
-            status="waiting", **validated_data
-        )
-        session.users.add(user)
-        session.movies.set(all_movie_ids)
-        return session
+        logger.debug(f"Validated data after adding date: {validated_data}")
+
+        try:
+            session = CustomSession.objects.create(
+                status="waiting", **validated_data
+            )
+            logger.debug(f"Session created with ID: {session.id}")
+
+            session.users.add(user)
+            logger.debug(f"User {user.device_id} added to session")
+
+            session.movies.set(all_movie_ids)
+            logger.debug(f"Movies set for session: {all_movie_ids}")
+
+            return session
+        except Exception as e:
+            logger.error(f"Error creating session: {e}")
+            raise
 
     def to_representation(self, instance: CustomSession) -> dict[str, Any]:
         """Переопределяет метод для вывода данных сессии."""
         data = super().to_representation(instance)
+        logger.debug(f"Representation data before adding movies: {data}")
+
         # Извлекаем только 'id' фильмов
         data["movies"] = [movie.id for movie in instance.movies.all()]
+        logger.debug(f"Representation data after adding movies: {data}")
+
+        data["users"] = [user.name for user in instance.users.all()]
         return data
 
 
 class CustomSessionSerializer(serializers.ModelSerializer):
     "Serializer for closed sessions."
-    users = serializers.StringRelatedField(many=True, read_only=True)
-    matched_movies = MovieDetailSerializer(many=True, read_only=True)
+    users = CustomUserReadSerializer(many=True, read_only=True)
+    matched_movies = MovieSerializer(many=True, read_only=True)
     matched_movies_count = serializers.SerializerMethodField()
 
     class Meta:
@@ -373,3 +399,17 @@ class CustomSessionSerializer(serializers.ModelSerializer):
 
     def get_matched_movies_count(self, obj: CustomSession) -> int:
         return obj.matched_movies.count()
+
+
+class CustomSessionListSerializer(CustomSessionSerializer):
+    "Serializer for closed sessions list."
+
+    class Meta:
+        model = CustomSession
+        fields = [
+            "id",
+            "users",
+            "date",
+            "image",
+            "matched_movies_count",
+        ]
