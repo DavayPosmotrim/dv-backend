@@ -91,7 +91,7 @@ class KinopoiskMovies(KinopoiskService):
                     "votes",
                     "movieLength",
                     "genres",
-                    "persons",
+                    "persons"
                 ),
                 "page": page,
                 "limit": limit,
@@ -99,6 +99,7 @@ class KinopoiskMovies(KinopoiskService):
                 "type": [movie, cartoon, anime,
                          "!animated-series",
                          "!tv-series"],
+                "isSeries": False
             }
             if sort_by_rating:
                 params["sortField"] = "rating.kp"
@@ -184,13 +185,23 @@ class KinopoiskMovieInfo(KinopoiskService):
             persons = movie.get("persons", [])
 
             for person in persons:
-                if person["enProfession"] == "actor" and actor_count < 4:
-                    movie["actors"].append(person["name"])
+                # Если нет имени на русском, заменяем на оригинальное
+                name = person.get("name") or person.get("enName")
+                if person.get("enProfession") == "actor" and actor_count < 4:
+                    movie["actors"].append(name)
                     actor_count += 1
-                elif (person["enProfession"] == "director"
-                      and director_count < 4):
-                    movie["directors"].append(person["name"])
+                elif person.get(
+                    "enProfession"
+                ) == "director" and director_count < 4:
+                    movie["directors"].append(name)
                     director_count += 1
+
+            # Если списки пусты, заменяем их на None
+            if not movie["actors"]:
+                movie["actors"] = None
+            if not movie["directors"]:
+                movie["directors"] = None
+
             # Удаляем ключ только если он существует
             if "persons" in movie:
                 del movie["persons"]

@@ -177,7 +177,8 @@ class CollectionListView(APIView):
                             )
                     else:
                         logger.error(
-                            f"Не удалось загрузить изображение с URL: {cover_url}"
+                            f"Не удалось загрузить изображение с URL"
+                            f": {cover_url}"
                         )
                 else:
                     collection, created = Collection.objects.get_or_create(

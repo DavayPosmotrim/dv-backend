@@ -5,14 +5,21 @@ import string
 from babel.dates import format_date
 from django.db import models
 from movies.models import Movie
-from services.constants import STATUS_CHOICES
+from services.constants import MAX_SESSION_ID_LENGTH, STATUS_CHOICES
 from users.models import User
 
 locale.setlocale(locale.LC_TIME, 'ru_RU.UTF-8')
 
 
 def generate_id():
-    return ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+    """Генерирует случайный набор из 7 символов,
+    из которых 4 буквы и 3 цифры. """
+    letters = ''.join(random.choices(string.ascii_letters, k=4))
+    digits = ''.join(random.choices(string.digits, k=3))
+    # Объединяем и перемешиваем буквы и цифры
+    session_id = list(letters + digits)
+    random.shuffle(session_id)
+    return ''.join(session_id)
 
 
 class CustomSession(models.Model):
@@ -21,7 +28,7 @@ class CustomSession(models.Model):
     id = models.CharField(
         primary_key=True,
         default=generate_id,
-        max_length=8,
+        max_length=MAX_SESSION_ID_LENGTH,
         editable=False,
         verbose_name="Уникальный идентификатор сессии"
     )
