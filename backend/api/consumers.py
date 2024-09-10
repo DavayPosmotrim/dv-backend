@@ -54,4 +54,4 @@ class CustomSessionConsumer(WebsocketConsumer):
         logger.info(f"Sending message to WebSocket: {message}")
 
         # Send message to WebSocket
-        self.send(text_data=json.dumps({"message": message}))
+        self.send(text_data=json.dumps({"message": message}, ensure_ascii=False))
