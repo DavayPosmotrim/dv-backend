@@ -1,9 +1,9 @@
 import logging
-import requests
 from random import choice
 from typing import Any, Dict, Optional
 from uuid import UUID
 
+import requests
 from custom_sessions.models import CustomSession, CustomSessionMovieVote
 from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
@@ -17,7 +17,6 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
-
 from services.kinopoisk.kinopoisk_service import (KinopoiskCollections,
                                                   KinopoiskGenres)
 from services.schemas import device_id_header
@@ -26,11 +25,9 @@ from users.models import User
 
 from .serializers import (CollectionSerializer, CreateVoteSerializer,
                           CustomSessionCreateSerializer,
-                          CustomSessionListSerializer,
-                          CustomSessionSerializer,
-                          CustomUserSerializer,
-                          GenreSerializer, MovieReadDetailSerializer,
-                          MovieSerializer)
+                          CustomSessionListSerializer, CustomSessionSerializer,
+                          CustomUserSerializer, GenreSerializer,
+                          MovieReadDetailSerializer, MovieSerializer)
 
 logger = logging.getLogger("views")
 
