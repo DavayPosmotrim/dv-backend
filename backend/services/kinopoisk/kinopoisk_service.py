@@ -135,7 +135,6 @@ class KinopoiskMovies(KinopoiskService):
                     break
             return all_movies[:max_movies]
         except requests.exceptions.RequestException as e:
-            logger.error(f"Ошибка при запросе к Кинопоиску: {e}")
             raise e
 
 
@@ -195,13 +194,13 @@ class KinopoiskMovieInfo(KinopoiskService):
                 ) == "director" and director_count < 4:
                     movie["directors"].append(name)
                     director_count += 1
-
+                if actor_count >= 4 and director_count >= 4:
+                    break
             # Если списки пусты, заменяем их на None
             if not movie["actors"]:
                 movie["actors"] = None
             if not movie["directors"]:
                 movie["directors"] = None
-
             # Удаляем ключ только если он существует
             if "persons" in movie:
                 del movie["persons"]

@@ -4,7 +4,8 @@ from drf_spectacular.views import (SpectacularAPIView, SpectacularRedocView,
 from rest_framework.routers import DefaultRouter
 
 from .views import (CollectionListView, CreateUpdateUserView,
-                    CustomSessionViewSet, GenreListView, MovieDetailView,
+                    CustomSessionViewSet, CustomSessionCreateView,
+                    GenreListView, MovieDetailView,
                     MovieViewSet)
 
 router = DefaultRouter()
@@ -24,6 +25,11 @@ urlpatterns = [
     path("collections/",
          CollectionListView.as_view(),
          name="collections_list"),
+    path(
+        "sessions/create",
+        CustomSessionCreateView.as_view({'post': 'create'}),
+        name="session_create"
+    ),
     path("schema/", SpectacularAPIView.as_view(), name="schema"),
     path("schema/docs/", SpectacularSwaggerView.as_view(url_name="schema")),
     path("schema/redoc/",
