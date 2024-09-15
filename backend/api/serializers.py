@@ -47,6 +47,14 @@ class CustomUserSerializer(serializers.ModelSerializer):
         return data
 
 
+class CustomUserReadSerializer(serializers.ModelSerializer):
+    """Сериализатор пользователей для представлений."""
+
+    class Meta:
+        model = User
+        fields = ("name",)
+
+
 class CollectionSerializer(serializers.ModelSerializer):
     """Сериализатор подборки."""
 
@@ -107,7 +115,6 @@ class MovieDetailSerializer(serializers.ModelSerializer):
     def validate(self, data: dict[str, Any]) -> dict[str, Any]:
         """Преобразование данных из внешнего источника в формат модели."""
         movie_data = data.get("movie_data", {})
-        # logger.debug(f"Movie data incoming: {movie_data}")
         poster_data = movie_data.get("poster", {})
         countries_list = movie_data.get("countries", [])
         rating_data = movie_data.get("rating", {})
@@ -150,11 +157,9 @@ class MovieDetailSerializer(serializers.ModelSerializer):
         for movie_data in kinopoisk_movies:
             movie_id = movie_data["id"]
             if not Movie.objects.filter(id=movie_id).exists():
-                logger.debug(f"Фильм {movie_id} отсутствует в базе данных.")
                 self.create_movie(movie_data)
                 all_movie_ids.append(movie_id)
             else:
-                logger.debug(f"Фильм {movie_id} найден в базе данных.")
                 all_movie_ids.append(movie_id)
 
         return all_movie_ids
@@ -173,12 +178,8 @@ class MovieDetailSerializer(serializers.ModelSerializer):
             )
             if all_movies:
                 KinopoiskMovieInfo._extract_persons(all_movies)
-            logger.debug(
-                f"Total movies from Kinopoisk: {len(all_movies)}"
-            )
             return all_movies
         except requests.exceptions.RequestException as e:
-            logger.error(f"Ошибка при запросе к Кинопоиску: {e}")
             if (
                 isinstance(e, requests.exceptions.HTTPError)
                 and e.response.status_code == 504
@@ -194,8 +195,6 @@ class MovieDetailSerializer(serializers.ModelSerializer):
     def create_movie(self, movie_data: dict[str, Any]) -> Movie:
         """Создание или обновление фильма
         на основе валидированных данных."""
-        # logger.debug(f"Creating or updating movie with data: {movie_data}")
-
         validated_data = self.validate(
             {"movie_data": movie_data}
         )
@@ -328,16 +327,14 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
             )
         genres = validated_data.pop("genres", [])
         collections = validated_data.pop("collections", [])
-        # logger.debug(f"Genres from request: {genres}")
-        # logger.debug(f"Collections from request: {collections}")
         movie_detail_serializer = MovieDetailSerializer()
         kinopoisk_movies = movie_detail_serializer.fetch_kinopoisk_movies(
             genres, collections
         )
+
         all_movie_ids = movie_detail_serializer.check_and_add_movies(
             kinopoisk_movies
         )
-        # logger.debug(f"All movie IDs: {all_movie_ids}")
         validated_data['date'] = date.today()
         session = CustomSession.objects.create(
             status="waiting", **validated_data
@@ -351,13 +348,14 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
         data = super().to_representation(instance)
         # Извлекаем только 'id' фильмов
         data["movies"] = [movie.id for movie in instance.movies.all()]
+        data["users"] = [user.name for user in instance.users.all()]
         return data
 
 
 class CustomSessionSerializer(serializers.ModelSerializer):
     "Serializer for closed sessions."
-    users = serializers.StringRelatedField(many=True, read_only=True)
-    matched_movies = MovieDetailSerializer(many=True, read_only=True)
+    users = CustomUserReadSerializer(many=True, read_only=True)
+    matched_movies = MovieSerializer(many=True, read_only=True)
     matched_movies_count = serializers.SerializerMethodField()
 
     class Meta:
@@ -373,3 +371,17 @@ class CustomSessionSerializer(serializers.ModelSerializer):
 
     def get_matched_movies_count(self, obj: CustomSession) -> int:
         return obj.matched_movies.count()
+
+
+class CustomSessionListSerializer(CustomSessionSerializer):
+    "Serializer for closed sessions list."
+
+    class Meta:
+        model = CustomSession
+        fields = [
+            "id",
+            "users",
+            "date",
+            "image",
+            "matched_movies_count",
+        ]

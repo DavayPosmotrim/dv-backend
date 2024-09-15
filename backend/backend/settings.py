@@ -177,6 +177,7 @@ SPECTACULAR_SETTINGS = {
     },
 }
 
+# полное логирование
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -211,6 +212,24 @@ LOGGING = {
         },
     },
 }
+
+# краткое логирование для быстрого поиска ошибок
+
+# LOGGING = {
+#     "version": 1,
+#     "disable_existing_loggers": False,
+#     "handlers": {
+#         "console": {
+#             "class": "logging.StreamHandler",
+#         },
+#     },
+#     "root": {
+#         "handlers": ["console"],
+#         "level": "DEBUG",
+#     },
+# }
+
+# настройки для периодических задач
 
 # Q_CLUSTER = {
 #     'name': 'DP_DjangoQ',
