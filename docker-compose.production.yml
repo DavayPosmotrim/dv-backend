@@ -19,7 +19,7 @@ services:
     restart: unless-stopped
 
   backend:
-    image: ${DOCKER_USERNAME}/dv-backend-backend:latest
+    image: dockerhub4u/dv-backend-backend:latest
     env_file: .env
     volumes:
       - static_value:/static/
@@ -29,7 +29,7 @@ services:
     restart: unless-stopped
 
   nginx:
-    image: ${DOCKER_USERNAME}/dv-backend-nginx:latest
+    image: dockerhub4u/dv-backend-nginx:latest
     ports:
       - "8000:80"
     volumes:
