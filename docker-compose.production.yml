@@ -1,4 +1,4 @@
-version: '3.8'
+# docker-compose.production.yml
 
 volumes:
   pg_data:
