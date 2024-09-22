@@ -19,7 +19,7 @@ services:
     restart: unless-stopped
 
   backend:
-    image: ${DOCKERHUB_USERNAME}/${PROJECT_NAME}-backend:latest
+    image: ${DOCKER_USERNAME}/${PROJECT_NAME}-backend:latest
     env_file: .env
     volumes:
       - static_value:/static/
@@ -29,7 +29,8 @@ services:
     restart: unless-stopped
 
   nginx:
-    image: ${DOCKERHUB_USERNAME}/nginx:latest
+    image: ${DOCKER_USERNAME}/${PROJECT_NAME}-nginx:latest
+    env_file: .env
     ports:
       - "8000:80"
     volumes:
