@@ -58,16 +58,9 @@ class CustomUserReadSerializer(serializers.ModelSerializer):
 class CollectionSerializer(serializers.ModelSerializer):
     """Сериализатор подборки."""
 
-    cover = serializers.SerializerMethodField()
-
     class Meta:
         model = Collection
         fields = ["name", "slug", "cover"]
-
-    def get_cover(self, obj: Collection) -> str | None:
-        if obj.cover:
-            return obj.cover.url
-        return None
 
 
 class GenreSerializer(serializers.ModelSerializer):

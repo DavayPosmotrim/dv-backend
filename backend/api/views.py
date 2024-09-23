@@ -3,9 +3,9 @@ from random import choice
 from typing import Any, Dict, Optional
 from uuid import UUID
 
-import requests
+# import requests
 from custom_sessions.models import CustomSession, CustomSessionMovieVote
-from django.core.files.base import ContentFile
+# from django.core.files.base import ContentFile
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from movies.models import Collection, Genre, Movie
@@ -146,22 +146,17 @@ class CollectionListView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
         # сохраняем объекты в базу данных
-        for collection_data in collections_data['docs']:
-            cover_file = None
-            cover_data = collection_data.get('cover')
-            if cover_data and isinstance(cover_data, dict):
-                cover_url = cover_data.get('url')
-                response = requests.get(cover_url)
-                cover_file = ContentFile(response.content)
+        for collection_data in collections_data.get('docs', []):
+            cover = collection_data.get('cover', {}).get('url')
+            logger.info(f"Получен cover URL: {cover}")
 
             collection = Collection(
-                slug=collection_data['slug'],
-                name=collection_data['name']
+                slug=collection_data.get('slug'),
+                name=collection_data.get('name'),
+                cover=cover if cover else None
             )
-            if cover_file:
-                collection.cover.save(f"{collection.slug}.jpg", cover_file)
-            else:
-                collection.save()
+            collection.save()
+
         # Обновляем queryset после добавления новых объектов
         collections = Collection.objects.all()
         serializer = CollectionSerializer(collections, many=True)

@@ -31,11 +31,10 @@ class Collection(models.Model):
         null=False,
         blank=False
     )
-    cover = models.ImageField(
-        "Ссылка на изображение",
-        upload_to="collections/",
+    cover = models.URLField(
+        "URL изображения",
         null=True,
-        default=None
+        blank=True
     )
 
     class Meta:
