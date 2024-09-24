@@ -56,12 +56,12 @@ jobs:
           context: ./backend/
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/dv-backend-backend:latest
-      - name: Build and push Nginx image to DockerHub
-        uses: docker/build-push-action@v4
-        with:
-          context: ./infra
-          push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/dv-backend-nginx:latest
+      # - name: Build and push Nginx image to DockerHub
+      #   uses: docker/build-push-action@v4
+      #   with:
+      #     context: ./infra
+      #     push: true
+      #     tags: secrets.DOCKER_USERNAME }}/dv-backend-nginx:latest
   
   deploy:
     runs-on: ubuntu-latest
