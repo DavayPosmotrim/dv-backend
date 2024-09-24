@@ -78,6 +78,14 @@ jobs:
           password: ${{ secrets.PASSWORD }}
           source: "docker-compose.production.yml"
           target: "/home/dv-backend/"
+      - name: Copy nginx.conf via ssh
+        uses: appleboy/scp-action@v0.1.0
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          password: ${{ secrets.PASSWORD }}
+          source: "infra/nginx.conf"
+          target: "/home/dv-backend/"
       - name: Executing remote ssh commands to deploy
         uses: appleboy/ssh-action@v1.0.3
         with:

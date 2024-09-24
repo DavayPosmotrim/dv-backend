@@ -29,7 +29,7 @@ services:
     restart: unless-stopped
 
   nginx:
-    image: dockerhub4u/dv-backend-nginx:latest
+    image: nginx:latest
     ports:
       - "8000:80"
     volumes:
