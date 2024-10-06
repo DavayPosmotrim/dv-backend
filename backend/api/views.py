@@ -235,15 +235,19 @@ class CustomSessionViewSet(viewsets.ReadOnlyModelViewSet):
         user_uuid = UUID(user_id)
         if request.method == "POST":
             if user_uuid in user_ids:
-                error_message = "Вы уже подключены к этому сеансу."
+                message = "Вы подключились повторно."
             elif session.status == "waiting":
                 session.users.add(user)
                 session.save()
                 serializer = CustomUserSerializer(session.users, many=True)
                 send_websocket_message(pk, "users", serializer.data)
                 message = f"Вы присоединились к сеансу {pk}"
-                return Response({"message": message},
-                                status=status.HTTP_201_CREATED)
+                return Response(
+                    {
+                        "message": message,
+                        "users": serializer.data
+                    },
+                    status=status.HTTP_201_CREATED)
             else:
                 error_message = "К этому сеансу нельзя подключиться."
             return Response(

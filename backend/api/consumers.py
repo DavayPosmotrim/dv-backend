@@ -21,6 +21,16 @@ class CustomSessionConsumer(WebsocketConsumer):
         )
         self.accept()
 
+    # Новый метод для обработки сообщений типа 'users'
+    def users(self, event):
+        data = event['data']
+
+        # Отправляем сообщение клиенту по веб-сокету
+        self.send(text_data=json.dumps({
+            'type': 'users',
+            'data': data
+        }))
+
     def disconnect(self, close_code):
         # Leave room group
         async_to_sync(self.channel_layer.group_discard)(
@@ -40,5 +50,13 @@ class CustomSessionConsumer(WebsocketConsumer):
     # Receive message from room group
     def chat_message(self, event):
         message = event["message"]
-        # Send message to WebSocket
-        self.send(text_data=json.dumps({"message": message}))
+        # Проверяем, является ли сообщение списком пользователей
+        if isinstance(message, dict) and message.get('type') == 'users':
+            # Отправляем список пользователей клиенту
+            self.send(text_data=json.dumps({
+                'type': 'users',
+                'data': message.get('data')
+            }))
+        else:
+            # Отправляем обычное сообщение клиенту
+            self.send(text_data=json.dumps({"message": message}))
