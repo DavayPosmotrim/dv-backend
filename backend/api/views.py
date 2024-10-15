@@ -380,9 +380,9 @@ class MovieViewSet(ListModelMixin, GenericViewSet):
         movie_ids = session.movies.values_list("id", flat=True)
         user_uuid = UUID(user_id)
         if movie_id in session.matched_movies.values_list("id", flat=True):
-            error_message = "Этот фильм уже находится в совпадениях."
-            return Response({"error_message": error_message},
-                            status=status.HTTP_400_BAD_REQUEST)
+            message = "Этот фильм уже находится в совпадениях."
+            return Response({"message": message},
+                            status=status.HTTP_200_OK)
         if user_uuid not in user_ids:
             # if user_id not in user_ids:
             error_message = ("Этот пользователь не может "
@@ -427,7 +427,7 @@ class MovieViewSet(ListModelMixin, GenericViewSet):
             return Response({"message": "Голос удален."},
                             status=status.HTTP_200_OK)
         return Response({"message": "Вы еще не проголосовали за этот фильм."},
-                        status=status.HTTP_404_NOT_FOUND)
+                        status=status.HTTP_204_NO_CONTENT)
 
 
 class MovieDetailView(APIView):
