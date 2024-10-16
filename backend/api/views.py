@@ -397,6 +397,16 @@ class MovieViewSet(ListModelMixin, GenericViewSet):
                             status=status.HTTP_400_BAD_REQUEST)
 
         if request.method == "POST":
+            existing_vote = CustomSessionMovieVote.objects.filter(
+                user_id=user_id,
+                session_id=session_id,
+                movie_id=movie_id
+            ).exists()
+            if existing_vote:
+                return Response(
+                    {"message": "Вы уже проголосовали за этот фильм."},
+                    status=status.HTTP_200_OK
+                )
             serializer = CreateVoteSerializer(data={
                 "user_id": user_id,
                 "session_id": session_id,

@@ -6,7 +6,6 @@ import requests.exceptions
 from custom_sessions.models import CustomSession, CustomSessionMovieVote
 from movies.models import Collection, Genre, Movie
 from rest_framework import serializers
-from rest_framework.validators import UniqueTogetherValidator
 from services.constants import MAX_MOVIES_QUANTITY
 from services.kinopoisk.kinopoisk_service import (KinopoiskMovieInfo,
                                                   KinopoiskMovies)
@@ -21,13 +20,6 @@ class CreateVoteSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomSessionMovieVote
         fields = "__all__"
-        validators = [
-            UniqueTogetherValidator(
-                queryset=CustomSessionMovieVote.objects.all(),
-                fields=["session_id", "user_id", "movie_id"],
-                message="Вы уже проголосовали за этот фильм"
-            )
-        ]
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
