@@ -1,8 +1,25 @@
-from custom_sessions.models import CustomSession
-from movies.models import Genre, Movie
+import logging
+from datetime import date
+from typing import Any, Optional
+
+import requests.exceptions
+from custom_sessions.models import CustomSession, CustomSessionMovieVote
+from movies.models import Collection, Genre, Movie
 from rest_framework import serializers
-from services.kinopoisk.kinopoisk_service import KinopoiskMovies
+from services.constants import MAX_MOVIES_QUANTITY
+from services.kinopoisk.kinopoisk_service import (KinopoiskMovieInfo,
+                                                  KinopoiskMovies)
+from services.validators import validate_name
 from users.models import User
+
+logger = logging.getLogger("serializers")
+
+
+class CreateVoteSerializer(serializers.ModelSerializer):
+    """Serializer to add votes."""
+    class Meta:
+        model = CustomSessionMovieVote
+        fields = "__all__"
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
@@ -10,10 +27,32 @@ class CustomUserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('name', 'device_id')
+        fields = ("name", "device_id")
         extra_kwargs = {
-            'device_id': {'write_only': True},  # Hide device_id from responses
+            "device_id": {"read_only": True},
         }
+
+    def validate(self, data: dict[str, Any]) -> dict[str, Any]:
+        # Automatically assign device_id from request context
+        data["device_id"] = self.context.get("device_id")
+        validate_name(data["name"])
+        return data
+
+
+class CustomUserReadSerializer(serializers.ModelSerializer):
+    """Сериализатор пользователей для представлений."""
+
+    class Meta:
+        model = User
+        fields = ("name",)
+
+
+class CollectionSerializer(serializers.ModelSerializer):
+    """Сериализатор подборки."""
+
+    class Meta:
+        model = Collection
+        fields = ["name", "slug", "cover"]
 
 
 class GenreSerializer(serializers.ModelSerializer):
@@ -21,42 +60,233 @@ class GenreSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Genre
-        fields = [
-            'id',
-            'name'
-        ]
+        fields = ["name"]
 
 
 class MovieSerializer(serializers.ModelSerializer):
-    """Сериализатор фильма/списка фильмов."""
-
-    genre = serializers.SlugRelatedField(
-        many=True,
-        slug_field='name',
-        queryset=Genre.objects.all()
-    )
+    """Сериализатор краткого представления
+    для фильма в списке фильмов."""
 
     class Meta:
         model = Movie
-        fields = ['id', 'name', 'genre', 'image']
+        fields = ["id", "name", "poster"]
+
+
+class MovieDetailSerializer(serializers.ModelSerializer):
+    """Сериализатор создания фильма."""
+
+    genres: list[GenreSerializer] = GenreSerializer(many=True)
+
+    class Meta:
+        model = Movie
+        fields = [
+            "id",
+            "name",
+            "description",
+            "year",
+            "countries",
+            "poster",
+            "alternative_name",
+            "rating_kp",
+            "rating_imdb",
+            "votes_kp",
+            "votes_imdb",
+            "movie_length",
+            "genres",
+            "directors",
+            "actors",
+        ]
+
+    def validate(self, data: dict[str, Any]) -> dict[str, Any]:
+        """Преобразование данных из внешнего источника в формат модели."""
+        movie_data = data.get("movie_data", {})
+        poster_data = movie_data.get("poster", {})
+        countries_list = movie_data.get("countries", [])
+        rating_data = movie_data.get("rating", {})
+        votes_data = movie_data.get("votes", {})
+        genres = []
+        for genre in movie_data.get("genres", []):
+            genre_name = genre.get("name", "")
+            if genre_name:
+                genre_obj, created = Genre.objects.get_or_create(
+                    name=genre_name
+                )
+                genres.append(genre_obj)
+        countries = ([country.get("name", "") for country in countries_list])
+        validated_data = {
+            "genres": genres,
+            "name": movie_data.get("name", ""),
+            "poster": poster_data.get("url", ""),
+            "description": movie_data.get("description", ""),
+            "year": movie_data.get("year"),
+            "countries": countries,
+            "actors": movie_data.get("actors"),
+            "directors": movie_data.get("directors"),
+            "alternative_name": movie_data.get("alternativeName", ""),
+            "rating_kp": rating_data.get("kp", 0),
+            "rating_imdb": rating_data.get("imdb", 0),
+            "votes_kp": votes_data.get("kp", 0),
+            "votes_imdb": votes_data.get("imdb", 0),
+            "movie_length": movie_data.get("movieLength"),
+        }
+        return validated_data
+
+    def check_and_add_movies(
+        self, kinopoisk_movies: Optional[list[dict[str, Any]]]
+    ) -> list[int]:
+        """Проверка наличия фильма в базе данных
+        и добавление фильма в БД при отсутствии."""
+        if kinopoisk_movies is None:
+            return []
+        all_movie_ids = []
+        for movie_data in kinopoisk_movies:
+            movie_id = movie_data["id"]
+            if not Movie.objects.filter(id=movie_id).exists():
+                self.create_movie(movie_data)
+                all_movie_ids.append(movie_id)
+            else:
+                all_movie_ids.append(movie_id)
+
+        return all_movie_ids
+
+    def fetch_kinopoisk_movies(
+        self, genres: list[str], collections: list[str]
+    ) -> list[dict[str, Any]]:
+        """Получение данных с кинопоиска."""
+        kinopoisk_service = KinopoiskMovies(
+            genres=genres,
+            collections=collections
+        )
+        try:
+            all_movies = kinopoisk_service.get_all_movies(
+                max_movies=MAX_MOVIES_QUANTITY
+            )
+            if all_movies:
+                KinopoiskMovieInfo._extract_persons(all_movies)
+            return all_movies
+        except requests.exceptions.RequestException as e:
+            if (
+                isinstance(e, requests.exceptions.HTTPError)
+                and e.response.status_code == 504
+            ):
+                raise serializers.ValidationError(
+                    "Сервер Кинопоиска не отвечает. Попробуйте позже."
+                )
+            else:
+                raise serializers.ValidationError(
+                    "Ошибка при запросе к Кинопоиску."
+                )
+
+    def create_movie(self, movie_data: dict[str, Any]) -> Movie:
+        """Создание или обновление фильма
+        на основе валидированных данных."""
+        validated_data = self.validate(
+            {"movie_data": movie_data}
+        )
+        movie_id = movie_data["id"]
+        movie_obj, created = Movie.objects.update_or_create(
+            id=movie_id,
+            defaults={
+                "name": validated_data.get("name"),
+                "poster": validated_data.get("poster"),
+                "description": validated_data.get("description"),
+                "year": validated_data.get("year"),
+                "alternative_name": validated_data.get("alternative_name"),
+                "rating_kp": validated_data.get("rating_kp"),
+                "rating_imdb": validated_data.get("rating_imdb"),
+                "votes_kp": validated_data.get("votes_kp"),
+                "votes_imdb": validated_data.get("votes_imdb"),
+                "movie_length": validated_data.get("movie_length"),
+                "actors": validated_data.get("actors", []),
+                "directors": validated_data.get("directors", []),
+                "countries": validated_data.get("countries", [])
+            }
+        )
+        genres = validated_data.pop("genres", [])
+        if genres:
+            movie_obj.genres.set(genres)
+
+        return movie_obj
+
+
+class MovieReadDetailSerializer(serializers.ModelSerializer):
+    """Сериализатор детального представления фильма."""
+
+    genres: list[GenreSerializer] = GenreSerializer(many=True)
+
+    class Meta:
+        model = Movie
+        fields = [
+            "id",
+            "name",
+            "description",
+            "year",
+            "countries",
+            "poster",
+            "alternative_name",
+            "rating_kp",
+            "rating_imdb",
+            "votes_kp",
+            "votes_imdb",
+            "movie_length",
+            "genres",
+            "directors",
+            "actors",
+        ]
+
+
+class MovieRouletteSerializer(serializers.ModelSerializer):
+    """Сериализатор представления фильма для рулетки."""
+
+    genres: list[GenreSerializer] = GenreSerializer(many=True)
+
+    class Meta:
+        model = Movie
+        fields = [
+            "name",
+            "year",
+            "countries",
+            "poster",
+            "alternative_name",
+            "rating_kp",
+            "movie_length",
+            "genres",
+        ]
 
 
 class CustomSessionCreateSerializer(serializers.ModelSerializer):
     """Сериализатор для создания сессии."""
 
-    movies = MovieSerializer(many=True, read_only=True)
+    genres = serializers.ListField(
+        child=serializers.CharField(), required=False, write_only=True
+    )
+    collections = serializers.ListField(
+        child=serializers.CharField(), required=False, write_only=True
+    )
+    movies = serializers.PrimaryKeyRelatedField(
+        many=True, required=False, read_only=True
+    )
+    matched_movies = serializers.PrimaryKeyRelatedField(
+        many=True, required=False, allow_empty=True, read_only=True
+    )
+    users = CustomUserSerializer(many=True, required=False, read_only=True)
 
     class Meta:
         model = CustomSession
-        fields = ['id',
-                  'users',
-                  'movies',
-                  'matched_movies',
-                  'date',
-                  'status'
-                  ]
+        fields = [
+            "id",
+            "users",
+            "movies",
+            "matched_movies",
+            "date",
+            "genres",
+            "collections",
+            "status",
+            "image",
+        ]
+        read_only_fields = ["status", "image", "date"]
 
-    def validate_id(self, value):
+    def validate_id(self, value: str) -> str:
         """
         Проверяет уникальность сгенерированного идентификатора сессии.
         """
@@ -66,52 +296,77 @@ class CustomSessionCreateSerializer(serializers.ModelSerializer):
             )
         return value
 
-    def create(self, validated_data):
-        genres = self.context.get('genres', [])
-        collections = self.context.get('collections', [])
-        kinopoisk_movies = KinopoiskMovies(
-            genres=genres,
-            collections=collections
-        )
-        kinopoisk_movies = KinopoiskMovies().get_movies()
-        if kinopoisk_movies is None:
+    def create(self, validated_data: dict[str, Any]) -> CustomSession:
+        request = self.context.get("request")
+        device_id = request.headers.get("Device-Id")
+        if not device_id:
             raise serializers.ValidationError(
-                "Данные о фильмах отсутствуют в контексте."
+                {"message": "Требуется device_id"}
             )
-        # Проверяет, есть ли фильмы из KinopoiskMovies в нашей базе данных
-        existing_movies = Movie.objects.filter(
-            id__in=[movie.id for movie in kinopoisk_movies]
-        )
-        new_movies = {
-            movie for movie in kinopoisk_movies
-            if movie.id not in existing_movies.values_list(
-                'id', flat=True
-            )
-        }
 
-        # Сохраняет новые фильмы в базе данных
-        Movie.objects.bulk_create(
-            [Movie(
-                id=movie.id,
-                name=movie.name,
-                genre=movie.genre,
-                image=movie.image
-            ) for movie in new_movies]
+        try:
+            user = User.objects.get(device_id=device_id)
+        except User.DoesNotExist:
+            raise serializers.ValidationError(
+                {"message": "Пользователь с указанным Device-Id не найден"}
+            )
+        genres = validated_data.pop("genres", [])
+        collections = validated_data.pop("collections", [])
+        movie_detail_serializer = MovieDetailSerializer()
+        kinopoisk_movies = movie_detail_serializer.fetch_kinopoisk_movies(
+            genres, collections
         )
 
-        # Объединяет существующие и новые фильмы
-        movies = set(existing_movies) | new_movies
-        # Создает новый объект сессии
+        all_movie_ids = movie_detail_serializer.check_and_add_movies(
+            kinopoisk_movies
+        )
+        validated_data['date'] = date.today()
         session = CustomSession.objects.create(
-            users=self.context['request'].user,
-            **validated_data
+            status="waiting", **validated_data
         )
-        # Добавляет данные о всех фильмах в создаваемую сессию
-        session.movies.set(movies)
+        session.users.add(user)
+        session.movies.set(all_movie_ids)
         return session
 
-    def to_representation(self, instance):
+    def to_representation(self, instance: CustomSession) -> dict[str, Any]:
         """Переопределяет метод для вывода данных сессии."""
         data = super().to_representation(instance)
-        data['movies'] = MovieSerializer(instance.movies.all(), many=True).data
+        # Извлекаем только 'id' фильмов
+        data["movies"] = [movie.id for movie in instance.movies.all()]
+        data["users"] = [user.name for user in instance.users.all()]
         return data
+
+
+class CustomSessionSerializer(serializers.ModelSerializer):
+    "Serializer for closed sessions."
+    users = CustomUserReadSerializer(many=True, read_only=True)
+    matched_movies = MovieSerializer(many=True, read_only=True)
+    matched_movies_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CustomSession
+        fields = [
+            "id",
+            "users",
+            "matched_movies",
+            "date",
+            "image",
+            "matched_movies_count",
+        ]
+
+    def get_matched_movies_count(self, obj: CustomSession) -> int:
+        return obj.matched_movies.count()
+
+
+class CustomSessionListSerializer(CustomSessionSerializer):
+    "Serializer for closed sessions list."
+
+    class Meta:
+        model = CustomSession
+        fields = [
+            "id",
+            "users",
+            "date",
+            "image",
+            "matched_movies_count",
+        ]

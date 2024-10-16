@@ -5,6 +5,7 @@ from services.validators import validate_name
 
 class User(models.Model):
     """Model for users."""
+
     name = models.CharField(
         verbose_name="Имя",
         max_length=MAX_USER_NAME_LENGTH,
@@ -16,4 +17,6 @@ class User(models.Model):
         editable=False,
         primary_key=True,
     )
-    password = models.CharField(max_length=128, null=True, blank=True)
+
+    def __str__(self) -> str:
+        return self.name
