@@ -370,6 +370,10 @@ class MovieViewSet(ListModelMixin, GenericViewSet):
         user_id = request.headers.get("Device-Id")
         session_id = kwargs.get("session_id")
         movie_id = int(kwargs.get("pk"))
+        logger.debug(
+            f"Получен запрос на обработку лайка от пользователя "
+            f"{user_id} для фильма {movie_id} в сессии {session_id}."
+        )
         session = get_object_or_404(CustomSession, pk=session_id)
         # Проверка статуса сессии
         if session.status != "voting":
@@ -397,16 +401,25 @@ class MovieViewSet(ListModelMixin, GenericViewSet):
                             status=status.HTTP_400_BAD_REQUEST)
 
         if request.method == "POST":
+            logger.debug(
+                f"Обработка POST запроса для добавления лайка "
+                f"от пользователя {user_id} к фильму {movie_id}."
+            )
+
             existing_vote = CustomSessionMovieVote.objects.filter(
                 user_id=user_id,
                 session_id=session_id,
                 movie_id=movie_id
             ).exists()
             if existing_vote:
+                logger.info(
+                    f"Пользователь {user_id} уже проголосовал "
+                    f"за фильм {movie_id} в сессии {session_id}.")
                 return Response(
                     {"message": "Вы уже проголосовали за этот фильм."},
                     status=status.HTTP_200_OK
                 )
+
             serializer = CreateVoteSerializer(data={
                 "user_id": user_id,
                 "session_id": session_id,
@@ -414,18 +427,62 @@ class MovieViewSet(ListModelMixin, GenericViewSet):
             })
             if serializer.is_valid():
                 serializer.save()
-                if user_ids.count() == CustomSessionMovieVote.objects.filter(
+                logger.info(
+                    f"Пользователь {user_id} проголосовал"
+                    f"за фильм {movie_id} в сессии {session_id}."
+                )
+                #  новый код с логированием
+                vote_count = CustomSessionMovieVote.objects.filter(
                     movie_id=movie_id,
                     session_id=session_id
-                ).count():
+                ).count()
+                logger.debug(
+                    f"Текущее количество голосов"
+                    f"за фильм {movie_id}"
+                    f"в сессии {session_id}: {vote_count}."
+                )
+
+                if user_ids.count() == vote_count:
+                    logger.info(
+                        f"Фильм {movie_id} достиг необходимого количества "
+                        f"голосов в сессии {session_id}."
+                        f"Отправка сообщение по WebSocket "
+                        f"и добавление в совпадения."
+                    )
                     send_websocket_message(session_id, "matches", movie_id)
-                    movie = get_object_or_404(Movie, pk=movie_id)
-                    session.matched_movies.add(movie)
-                    session.save()
+
+                # if user_ids.count() == CustomSessionMovieVote.objects.filter(
+                #     movie_id=movie_id,
+                #     session_id=session_id
+                # ).count():
+
+                #     send_websocket_message(session_id, "matches", movie_id)
+                    try:
+                        movie = get_object_or_404(Movie, pk=movie_id)
+                        session.matched_movies.add(movie)
+                        session.save()
+                        logger.debug(
+                            f"Фильм {movie_id} успешно добавлен "
+                            f"в совпадения сессии {session_id}."
+                        )
+                    except Exception as e:
+                        logger.error(
+                            f"Ошибка при добавлении фильма {movie_id} "
+                            f"в совпадения сессии {session_id}: {e}"
+                        )
                 return Response(serializer.data,
                                 status=status.HTTP_201_CREATED)
+            logger.error(
+                f"Сериализатор не валиден для данных: {serializer.errors}."
+            )
             return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
+
+            #     return Response(serializer.data,
+            #                     status=status.HTTP_201_CREATED)
+            # return Response(serializer.errors,
+            #                 status=status.HTTP_400_BAD_REQUEST)
+
         # code for delete method
         vote = CustomSessionMovieVote.objects.filter(
             user_id=user_id,
