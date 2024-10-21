@@ -1,15 +1,25 @@
+import locale
 import random
 import string
 
+from babel.dates import format_date
 from django.db import models
 from movies.models import Movie
-from services.constants import STATUS_CHOICES
-from services.utils import format_date
+from services.constants import MAX_SESSION_ID_LENGTH, STATUS_CHOICES
 from users.models import User
+
+locale.setlocale(locale.LC_TIME, 'ru_RU.UTF-8')
 
 
 def generate_id():
-    return ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+    """Генерирует случайный набор из 7 символов,
+    из которых 4 буквы и 3 цифры. """
+    letters = ''.join(random.choices(string.ascii_letters, k=4))
+    digits = ''.join(random.choices(string.digits, k=3))
+    # Объединяем и перемешиваем буквы и цифры
+    session_id = list(letters + digits)
+    random.shuffle(session_id)
+    return ''.join(session_id)
 
 
 class CustomSession(models.Model):
@@ -18,7 +28,7 @@ class CustomSession(models.Model):
     id = models.CharField(
         primary_key=True,
         default=generate_id,
-        max_length=8,
+        max_length=MAX_SESSION_ID_LENGTH,
         editable=False,
         verbose_name="Уникальный идентификатор сессии"
     )
@@ -47,6 +57,12 @@ class CustomSession(models.Model):
         related_name='matched_movies_custom_sessions',
         verbose_name='Избранный фильм',
     )
+    image = models.ImageField(
+        "Ссылка на изображение",
+        upload_to="movies/images/",
+        null=True,
+        default=None,
+    )
 
     class Meta:
         ordering = ("date",)
@@ -59,6 +75,35 @@ class CustomSession(models.Model):
 
     def get_formatted_date(self):
         if self.date:
-            return format_date(self.date)
+            return format_date(self.date, format='d MMMM y', locale='ru')
         else:
             return 'Дата не установлена'
+
+
+class CustomSessionMovieVote(models.Model):
+    """Model for movie votes within session."""
+    session_id = models.ForeignKey(
+        CustomSession,
+        related_name="votes",
+        on_delete=models.CASCADE,
+    )
+    user_id = models.ForeignKey(
+        User,
+        related_name="votes",
+        on_delete=models.CASCADE
+    )
+    movie_id = models.ForeignKey(
+        Movie,
+        related_name="votes",
+        on_delete=models.CASCADE
+    )
+
+    class Meta:
+        verbose_name = "CustomSessionMovieVote"
+        verbose_name_plural = "CustomSessionMovieVotes"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["session_id", "user_id", "movie_id"],
+                name='unique_vote'
+            )
+        ]
